@@ -63,7 +63,6 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const navLinks = document.querySelectorAll('.nav-links a');
     const cards = document.querySelectorAll('.cards-grid .card');
-    let isAnimating = false;
     let categoriesData = {};
 
     function setActiveNavLink(linkElement) {
@@ -120,6 +119,12 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', () => {
           activeGroupPerCategory[category] = (activeGroupPerCategory[category] === group) ? null : group;
           pagesState[category] = 0;
+          groupFilter.querySelectorAll('.group-btn').forEach(groupButton => {
+            groupButton.classList.toggle(
+              'active',
+              groupButton.dataset.group === activeGroupPerCategory[category]
+            );
+          });
           animateCards(category);
         });
         groupFilter.appendChild(btn);
@@ -224,8 +229,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (typeof pagesState[category] === 'undefined') pagesState[category] = 0;
     }
 
-    function animateCards(category) {
-      isAnimating = true;
+    function updateCategoryPresentation(category) {
       const descElement = document.getElementById('categoryDescription');
       if (descElement) {
         descElement.classList.remove('active');
@@ -235,6 +239,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 150);
       }
       updateGroupingButtons(category);
+    }
+
+    function animateCards(category) {
       cards.forEach((card, index) => {
         setTimeout(() => { card.classList.remove('animate'); card.classList.add('exit'); }, index * 80);
       });
@@ -244,15 +251,6 @@ document.addEventListener('DOMContentLoaded', function() {
         cards.forEach((card, index) => {
           setTimeout(() => { card.classList.add('animate'); }, index * 100);
         });
-        setTimeout(() => {
-          const groupFilter = document.getElementById('groupingFilter');
-          if (groupFilter) {
-            groupFilter.classList.remove('animate');
-            void groupFilter.offsetWidth;
-            groupFilter.classList.add('animate');
-          }
-          isAnimating = false;
-        }, 1000);
       }, 600);
     }
 
@@ -263,6 +261,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const category = e.currentTarget.dataset.category;
         activeGroupPerCategory[category] = null;
         pagesState[category] = 0;
+        updateCategoryPresentation(category);
         animateCards(category);
       });
     });
@@ -283,6 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     ensureCategoryState('projects');
+    updateCategoryPresentation('projects');
     animateCards('projects');
     const initialLink = document.querySelector('.nav-links a[data-category="projects"]') || navLinks[0];
     if (initialLink) setActiveNavLink(initialLink);

@@ -617,14 +617,6 @@ section {
   margin-top: 0;
   margin-bottom: 0px;
   opacity: 1;
-  transition: opacity 0.5s ease;
-}
-
-
-
-
-#groupingFilter.grouping-filter-animate {
-  opacity: 1;
 }
 
 

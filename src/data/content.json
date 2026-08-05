@@ -6,20 +6,23 @@
         "role": "Full Stack Developer",
         "location": "Kuala Lumpur, Malaysia",
         "email": "fizzyjamal@gmail.com",
+        "terminal_prompt": "afizi@portfolio:~$",
+        "hero_command": "whoami",
+        "summary_command": "cat profile-summary.txt",
         "favicon": "../../shared/media/images/dp.png",
         "footer": "Build by Mohamad Afizi. Self-hosted. Self-made. 2026"
     },
     "navigation": {
         "projects": {
-            "label": "projects",
+            "label": "./projects",
             "description": "A range of projects across independent builds, technical experiments, and guided learning — showcasing how I think, solve, and execute."
         },
         "milestones": {
-            "label": "milestones",
+            "label": "./milestones",
             "description": "Certifications, courses, and structured learning milestones that reflect my commitment to continuous improvement"
         },
         "industry_experiences": {
-            "label": "industry experiences",
+            "label": "./industry-experiences",
             "description": "Real-world contributions from my time in the industry — practical tasks, problem-solving, and hands-on experience across different roles and environments."
         }
     },

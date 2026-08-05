@@ -148,6 +148,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (index < pageItems.length) {
           card.style.display = '';
           const item = pageItems[index];
+          const itemNumber = (page * itemsPerPage) + index + 1;
+          card.dataset.terminalLabel = `[${String(category).toUpperCase()}_${String(itemNumber).padStart(2, '0')}]`;
           if (cardTitle) cardTitle.textContent = item.title;
           if (cardText) cardText.textContent = item.description || '';
           if (cardTechstack) {
@@ -329,6 +331,10 @@ document.addEventListener('DOMContentLoaded', function() {
   let currentSlideIndex = 0;
   let githubRequest = null;
 
+  if (typeof Chart !== 'undefined') {
+    Chart.defaults.font.family = "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace";
+  }
+
   const dataLabelPlugin = {
     id: 'dataLabelPlugin',
     afterDatasetsDraw(chart) {
@@ -336,7 +342,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const pluginOpts = (chart.options && chart.options.plugins && chart.options.plugins.dataLabelPlugin) || {};
       if (pluginOpts.enabled === false) return;
       const color = pluginOpts.color || '#ffffff';
-      const font = pluginOpts.font || '12px Arial';
+      const font = pluginOpts.font || "12px 'JetBrains Mono', monospace";
       const bg = pluginOpts.background || 'rgba(0,0,0,0.65)';
       const padding = pluginOpts.padding || 6;
       const position = pluginOpts.position || 'top';
@@ -423,7 +429,7 @@ document.addEventListener('DOMContentLoaded', function() {
         x: { grid: { display: false }, ticks: { color: '#888' } }
       },
       plugins: {
-        dataLabelPlugin: { enabled: true, position: 'top', color: '#ffffff', font: '12px Arial' },
+        dataLabelPlugin: { enabled: true, position: 'top', color: '#ffffff', font: "12px 'JetBrains Mono', monospace" },
         legend: { display: false },
         tooltip: {
           backgroundColor: 'rgba(0,0,0,0.8)',

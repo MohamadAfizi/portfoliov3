@@ -398,13 +398,16 @@ section {
 }
 
 .card h3 {
-  margin-top: 0;
+  margin: 0 0 8px;
   color: #fff;
+  line-height: 1.35;
 }
 
 .card p {
+  margin: 0 0 10px;
   font-size: 0.9rem;
   color: #fff;
+  line-height: 1.55;
   text-align: left;
 }
 
@@ -421,7 +424,11 @@ section {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 12px 0;
+  margin: 2px 0 0;
+}
+
+.card-techstack:empty {
+  display: none;
 }
 
 .tech-pill {
@@ -536,7 +543,7 @@ section {
   justify-content: flex-end;
   gap: 12px;
   margin-top: auto;
-  padding-top: 15px;
+  padding-top: 10px;
 }
 
 .card-link {

@@ -168,42 +168,43 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           if (cardLinks) {
             cardLinks.innerHTML = '';
-            const actions = [
-              {
-                url: item.readmeUrl,
-                label: uiText.readme_label,
-                ariaLabel: `Read the ${item.title} README`,
-                unavailableLabel: `README URL not configured for ${item.title}`
-              },
-              {
-                url: item.viewUrl,
-                label: uiText.view_label,
-                ariaLabel: `View ${item.title}`,
-                unavailableLabel: `Product URL not configured for ${item.title}`
-              }
-            ];
+            const actions = Array.isArray(item.actions) ? item.actions : [];
 
             actions.forEach(action => {
-              const hasUrl = typeof action.url === 'string' && /^https?:\/\//i.test(action.url);
-              const control = document.createElement(hasUrl ? 'a' : 'span');
-              control.className = hasUrl ? 'card-link' : 'card-link card-link-disabled';
-              control.textContent = action.label || '';
+              const label = typeof action.label === 'string' ? action.label.toLowerCase() : '';
+              const isExternal = action.type === 'external';
+              const isModal = action.type === 'modal';
+              const hasUrl = isExternal && typeof action.url === 'string' && /^https?:\/\//i.test(action.url);
+              const hasSource = isModal
+                && typeof action.source === 'string'
+                && /^content\/readmes\/[a-z0-9/_-]+\.md$/i.test(action.source);
+              const isEnabled = hasUrl || hasSource;
+              const elementName = isEnabled ? (isModal ? 'button' : 'a') : 'span';
+              const control = document.createElement(elementName);
+              control.className = isEnabled ? 'card-link' : 'card-link card-link-disabled';
+              control.textContent = label;
 
               if (hasUrl) {
                 control.href = action.url;
-                control.setAttribute('aria-label', action.ariaLabel);
+                control.setAttribute('aria-label', `Open ${label} for ${item.title}`);
                 control.target = '_blank';
                 control.rel = 'noopener noreferrer';
+              } else if (hasSource) {
+                control.type = 'button';
+                control.setAttribute('aria-label', `Open ${label} for ${item.title}`);
+                control.addEventListener('click', () => {
+                  openReadmeModal(item.title, action.source, control);
+                });
               } else {
                 control.setAttribute('aria-disabled', 'true');
-                control.setAttribute('aria-label', action.unavailableLabel);
-                control.title = action.unavailableLabel;
+                control.setAttribute('aria-label', `${label} is not configured for ${item.title}`);
+                control.title = `${label} is not configured`;
               }
 
               cardLinks.appendChild(control);
             });
 
-            cardLinks.hidden = false;
+            cardLinks.hidden = actions.length === 0;
           }
         } else {
           card.style.display = 'none';
@@ -290,6 +291,186 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Start loading and initialization
     initPortfolioUI();
+});
+
+// ============================================
+// Local Markdown README Modal
+// ============================================
+const readmeModal = document.getElementById('readmeModal');
+const readmeModalTitle = document.getElementById('readmeModalTitle');
+const readmeModalBody = document.getElementById('readmeModalBody');
+const closeReadmeModalBtn = document.getElementById('closeReadmeModalBtn');
+let readmeReturnFocus = null;
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function renderInlineMarkdown(value) {
+  const codeTokens = [];
+  const tokenized = String(value).replace(/`([^`]+)`/g, (_, code) => {
+    const token = `\u0000CODE${codeTokens.length}\u0000`;
+    codeTokens.push(`<code>${escapeHtml(code)}</code>`);
+    return token;
+  });
+
+  let html = escapeHtml(tokenized);
+  html = html.replace(
+    /!\[([^\]]*)\]\(((?:https?:\/\/|\/?media\/)[^\s)"'<>]+)\)/gi,
+    '<img src="$2" alt="$1" loading="lazy">'
+  );
+  html = html.replace(
+    /\[([^\]]+)\]\(((?:https?:\/\/|\/)[^\s)"'<>]+)\)/gi,
+    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+  );
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+  html = html.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
+
+  codeTokens.forEach((code, index) => {
+    html = html.replace(`\u0000CODE${index}\u0000`, code);
+  });
+
+  return html;
+}
+
+function renderMarkdown(markdown) {
+  const lines = String(markdown).replace(/\r\n?/g, '\n').split('\n');
+  const output = [];
+  let paragraph = [];
+  let listType = null;
+  let inCodeBlock = false;
+  let codeLines = [];
+
+  const flushParagraph = () => {
+    if (paragraph.length === 0) return;
+    output.push(`<p>${renderInlineMarkdown(paragraph.join(' '))}</p>`);
+    paragraph = [];
+  };
+
+  const closeList = () => {
+    if (!listType) return;
+    output.push(`</${listType}>`);
+    listType = null;
+  };
+
+  lines.forEach(line => {
+    if (/^```/.test(line)) {
+      flushParagraph();
+      closeList();
+      if (inCodeBlock) {
+        output.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+        codeLines = [];
+      }
+      inCodeBlock = !inCodeBlock;
+      return;
+    }
+
+    if (inCodeBlock) {
+      codeLines.push(line);
+      return;
+    }
+
+    if (line.trim() === '') {
+      flushParagraph();
+      closeList();
+      return;
+    }
+
+    const heading = line.match(/^(#{1,6})\s+(.+)$/);
+    if (heading) {
+      flushParagraph();
+      closeList();
+      const level = heading[1].length;
+      output.push(`<h${level}>${renderInlineMarkdown(heading[2])}</h${level}>`);
+      return;
+    }
+
+    if (/^\s*(---+|___+)\s*$/.test(line)) {
+      flushParagraph();
+      closeList();
+      output.push('<hr>');
+      return;
+    }
+
+    const unorderedItem = line.match(/^\s*[-*+]\s+(.+)$/);
+    const orderedItem = line.match(/^\s*\d+\.\s+(.+)$/);
+    if (unorderedItem || orderedItem) {
+      flushParagraph();
+      const nextListType = unorderedItem ? 'ul' : 'ol';
+      if (listType !== nextListType) {
+        closeList();
+        listType = nextListType;
+        output.push(`<${listType}>`);
+      }
+      output.push(`<li>${renderInlineMarkdown((unorderedItem || orderedItem)[1])}</li>`);
+      return;
+    }
+
+    const quote = line.match(/^>\s?(.*)$/);
+    if (quote) {
+      flushParagraph();
+      closeList();
+      output.push(`<blockquote>${renderInlineMarkdown(quote[1])}</blockquote>`);
+      return;
+    }
+
+    paragraph.push(line.trim());
+  });
+
+  if (inCodeBlock) {
+    output.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+  }
+  flushParagraph();
+  closeList();
+  return output.join('');
+}
+
+async function openReadmeModal(title, source, trigger) {
+  if (!readmeModal || !readmeModalTitle || !readmeModalBody || !closeReadmeModalBtn) return;
+  if (!/^content\/readmes\/[a-z0-9/_-]+\.md$/i.test(source)) return;
+
+  readmeReturnFocus = trigger || document.activeElement;
+  readmeModalTitle.textContent = title;
+  readmeModalBody.innerHTML = '<p class="readme-status">Loading README…</p>';
+  readmeModal.classList.add('visible');
+  readmeModal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+  closeReadmeModalBtn.focus();
+
+  try {
+    const response = await fetch(source, { headers: { Accept: 'text/markdown, text/plain' } });
+    if (!response.ok) throw new Error(`README request failed with HTTP ${response.status}`);
+    readmeModalBody.innerHTML = renderMarkdown(await response.text());
+  } catch (error) {
+    readmeModalBody.innerHTML = '<p class="readme-status readme-status-error">README is temporarily unavailable.</p>';
+  }
+}
+
+function closeReadmeModal() {
+  if (!readmeModal) return;
+  readmeModal.classList.remove('visible');
+  readmeModal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+  if (readmeReturnFocus && typeof readmeReturnFocus.focus === 'function') readmeReturnFocus.focus();
+  readmeReturnFocus = null;
+}
+
+if (closeReadmeModalBtn) closeReadmeModalBtn.addEventListener('click', closeReadmeModal);
+if (readmeModal) {
+  readmeModal.addEventListener('click', event => {
+    if (event.target === readmeModal) closeReadmeModal();
+  });
+}
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && readmeModal && readmeModal.classList.contains('visible')) {
+    closeReadmeModal();
+  }
 });
 
 // ============================================

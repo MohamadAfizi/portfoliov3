@@ -43,6 +43,17 @@ include __DIR__ . '/sections/industry-experiences.php';
 include __DIR__ . '/sections/portfolio.php';
 ?>
 
+<div id="readmeModal" class="modal" aria-hidden="true">
+  <div class="modal-content readme-modal-content" role="dialog" aria-modal="true" aria-labelledby="readmeModalTitle">
+    <header class="readme-modal-header">
+      <span class="readme-modal-path">./README.md</span>
+      <button id="closeReadmeModalBtn" class="modal-close" type="button" aria-label="Close README">&times;</button>
+    </header>
+    <h2 id="readmeModalTitle" class="readme-modal-title"></h2>
+    <article id="readmeModalBody" class="markdown-body"></article>
+  </div>
+</div>
+
 <script src="assets/app.js"></script>
 <div class="site-footer">
   <footer>

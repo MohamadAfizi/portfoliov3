@@ -16,6 +16,8 @@ portfoliov3/
     ├── assets/
     │   ├── styles.css            # the one global stylesheet
     │   └── app.js                # the one global JavaScript file
+    ├── content/
+    │   └── readmes/projects/     # local Markdown docs for non-Git projects
     ├── data/
     │   ├── content.json          # the one editable content source
     │   ├── visitors.json         # generated visitor log; intentionally ignored by Git
@@ -41,26 +43,48 @@ Use subfolders when media grows, for example `media/images/projects/portfolio-v3
 
 ## Edit content
 
-Edit `src/data/content.json` in VS Code or Notepad. The homepage reads this file once in PHP and passes the same data to `app.js`; there is no duplicate hardcoded card or skills list in JavaScript.
+Edit `src/data/content.json` in VS Code or Notepad. The homepage reads this file once in PHP and passes the same data to `app.js`; there is no duplicate hardcoded card or skills list in JavaScript. Local Markdown files are used only for long-form non-Git project documentation.
 
 - `site`: page title, name, role, location, email, favicon, and footer.
 - `navigation`: category labels and descriptions.
-- `ui`: chart, card-action, and pagination labels.
+- `ui`: chart and pagination labels.
 - `github`: GitHub username, profile URL, graph title, and graph wording.
 - `profile_summary`: introduction paragraph.
 - `tech_stack`: skill tags.
 - `projects`, `milestones`, `industry_experiences`: card arrays.
 
-Card links are optional. Every card shows `[readme]` and `[view]`; an action remains visibly disabled until its URL is added:
+Each card has an `actions` array. External actions remain disabled until an HTTP(S) URL is added:
 
 ```json
 {
   "title": "Project ABC",
   "description": "Project summary.",
-  "readmeUrl": "https://github.com/MohamadAfizi/projectabc#readme",
-  "viewUrl": "https://fizzyjamal.com/projectabc"
+  "actions": [
+    {
+      "label": "readme",
+      "type": "external",
+      "url": "https://github.com/MohamadAfizi/projectabc"
+    },
+    {
+      "label": "view",
+      "type": "external",
+      "url": "https://fizzyjamal.com/projectabc"
+    }
+  ]
 }
 ```
+
+For a non-Git project, use a local Markdown action:
+
+```json
+{
+  "label": "readme",
+  "type": "modal",
+  "source": "content/readmes/projects/project-name.md"
+}
+```
+
+Modal sources must stay inside `src/content/readmes/` and use the `.md` extension. Projects use `readme` and `view` actions, learning paths use `profile`, and certifications or completed courses use `certificate`. Industry Experience actions are intentionally deferred.
 
 Keep JSON commas and quotes valid. A quick validation command is:
 

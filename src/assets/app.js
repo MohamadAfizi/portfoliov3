@@ -1,7 +1,34 @@
+function readPortfolioData() {
+  const dataElement = document.getElementById('portfolio-data');
+  if (!dataElement) return {};
+
+  try {
+    return JSON.parse(dataElement.textContent || '{}');
+  } catch (error) {
+    console.warn('Unable to read portfolio data.', error);
+    return {};
+  }
+}
+
+const portfolioData = readPortfolioData();
+const uiText = portfolioData.ui || {};
+
+// Track asynchronously so IP-location lookup never delays the visible page.
+document.addEventListener('DOMContentLoaded', function() {
+  fetch('api/track-visitor.php', {
+    method: 'POST',
+    cache: 'no-store',
+    keepalive: true
+  }).catch(() => {
+    // Tracking is optional and must never interrupt the portfolio UI.
+  });
+});
+
 // ============================================
 // VANTA.js Background Setup
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
+    if (typeof VANTA === 'undefined' || !document.getElementById('vanta-bg')) return;
     VANTA.WAVES({
         el: "#vanta-bg",
         mouseControls: true,
@@ -23,6 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Baffle.js Text Animation
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
+    if (typeof baffle === 'undefined' || !document.querySelector('.text__glitch')) return;
     const text = baffle(".text__glitch");
     text.set({ characters: "█▓█ ▒░/▒░ █░▒▓/ █▒▒ ▓▒▓/█ ░█▒/ ▒▓░ █<░▒ ▓/░>", speed: 50 });
     text.start();
@@ -45,101 +73,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const itemsPerPage = 6;
 
-    // Fetch data from CMS API
+    const categoryConfig = portfolioData.categories || {};
+
+    // Content is loaded once by PHP from data/content.json and embedded as JSON.
     async function loadCategoriesData() {
-        try {
-            const response = await fetch('contentmanagement.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'action=list'
-            });
-            const result = await response.json();
-            if (result.ok && result.data) {
-                return result.data;
-            }
-        } catch (error) {
-            console.warn('Failed to load data from CMS API, using fallback:', error);
-        }
-        // Fallback hardcoded data if API fails
-        return {
-      'projects': [
-        { title: 'Library Book System', group: 'Independent Projects', description: 'A Laravel-based library application demonstrating MVC workflow with SQLite database integration, featuring book listing and pagination.', techStack: ['Laravel', 'SQLite', 'Git'] },
-        { title: 'LPT Highway Traffic Analysis', group: 'Independent Projects', description: 'Data analytics project analyzing traffic flow patterns at Gombak Toll Plaza using Microsoft Excel and custom datasets.', techStack: ['Data Analytics', 'Visualization', 'Microsoft Excel'] },
-        { title: 'Portfolio V3 CMS', group: 'Independent Projects', description: 'A content management system for portfolio website with full CRUD functionality, login security, and SQLite backend.', techStack: ['PHP', 'SQLite'] },
-        { title: 'Portfolio Website V3', group: 'Independent Projects', description: 'Dynamic portfolio website with API-driven content rendering, visitor analytics, and Chart.js visualizations.', techStack: ['PHP', 'SQLite', 'API', 'JavaScript'] },
-        { title: 'Portfolio Website V2', group: 'Independent Projects', description: 'PHP-based static portfolio hosted on on-premise mini server with Apache web server integration.', techStack: ['PHP'] },
-        { title: 'Linux On-Premise 24/7 Server', group: 'Independent Projects', description: 'Repurposed laptop transformed into a self-managed Linux server for hands-on learning in deployment and system management.', techStack: ['Linux', 'Apache', 'SFTP', 'Domain'] },
-        { title: 'Besikuning Dashboard', group: 'Independent Projects', description: 'Real-time gold market insights dashboard for Malaysian traders hosted on AWS S3 with Google Analytics.', techStack: ['PHP', 'AWS S3', 'Google Analytics'] },
-        { title: 'Portfolio Website V1', group: 'Independent Projects', description: 'Minimalist HTML portfolio showcasing projects with clean black-and-white design hosted on GitHub Pages.', techStack: ['HTML', 'GitHub Pages'] },
-        { title: 'Media & Multimedia Design', group: 'Independent Projects', description: 'Event media design including posters, banners, and promotional videos for university activities.', techStack: ['Graphic Design', 'Video Editing'] },
-        { title: 'Laravel Breeze Auth Sandbox', group: 'Technical Experiments', description: 'Isolated Laravel test app validating Breeze authentication flow including register, login, logout, and middleware route protection.', techStack: ['Laravel', 'Breeze', 'SQLite'] },
-        { title: 'REST API Token Lab', group: 'Technical Experiments', description: 'Small experiment project focused on issuing API tokens and validating protected endpoint access with basic role checks.', techStack: ['Laravel', 'API', 'Postman'] },
-        { title: 'Queue Worker Mini Lab', group: 'Technical Experiments', description: 'Sandbox setup to test queue job dispatch, worker processing, retry behavior, and failed-job handling.', techStack: ['Laravel', 'Queues', 'Redis'] },
-        { title: 'Finance Data Audit', group: 'Guided Projects', description: 'Hands-on financial data analysis using ACL v9 with data import, verification, and anomaly detection.', techStack: ['Data Audit', 'ACL'] },
-        { title: 'Interactive Excel Sales Dashboard', group: 'Guided Projects', description: 'Advanced Excel dashboard with large dataset handling, pivot tables, and data visualization techniques.', techStack: ['Data Analytics', 'Visualization', 'Microsoft Excel'] },
-        { title: 'IMR665 - Audio-Visual Records Management', group: 'Academic Projects', description: 'Documentary video production on Nasi Ambeng with editing, animations, subtitles, and sound effects.', techStack: ['Video Editing', 'Documentary'] },
-        { title: 'IMR664 - Electronic Record Keeping', group: 'Academic Projects', description: 'Business plan development for electronic records management system using Kordil EDMS.', techStack: ['EDMS'] },
-        { title: 'IMS457 - Multimedia for Information Professionals', group: 'Academic Projects', description: 'Interactive multimedia presentation titled "Eurotrip" developed with Macromedia Director and Adobe tools.', techStack: ['Swish Max', 'Adobe Photoshop'] },
-        { title: 'IMR606 - Digitization of Records', group: 'Academic Projects', description: 'Visual Basic application with Microsoft Access integration for student-job matching system.', techStack: ['Visual Basic', 'Microsoft Access'] },
-        { title: 'IMA656 - E-Learning Instruction Design', group: 'Academic Projects', description: '3R Awareness multimedia presentation promoting environmental consciousness with interactive design.', techStack: ['Swish Max', 'Adobe Photoshop'] },
-        { title: 'IMS506 - Database for Information Management', group: 'Academic Projects', description: 'Sport Centre Management System built with Microsoft Access including members, facilities, and bookings.', techStack: ['Microsoft Access'] },
-        { title: 'IMR555 - Electronic Records System', group: 'Academic Projects', description: 'Tuition centre management system with student registration, payments, attendance, and performance tracking.', techStack: ['Visual Basic', 'Microsoft Access'] },
-        { title: 'IMR505 - Records & Archival Repositories', group: 'Academic Projects', description: 'Complete records centre business plan with logo design and floor layout planning.', techStack: ['Adobe Illustrator'] },
-        { title: 'IMS456 - Web Design & Content Management', group: 'Academic Projects', description: 'Personal and university websites using HTML and CSS with media integration.', techStack: ['HTML', 'CSS', 'JavaScript'] }
-      ],
-      'milestones': [
-        { title: 'W3Schools', group: 'Learning Paths', description: 'Completed beginner Excel course covering core spreadsheet fundamentals and essential data organization skills.', techStack: [] },
-        { title: 'Microsoft Learn', group: 'Learning Paths', description: 'Showcasing completed Azure paths, badges, and learning achievements in cloud computing and enterprise solutions.', techStack: [] },
-        { title: 'Salesforce Trailblazer', group: 'Skill-Validated Certifications', description: 'Showcasing Salesforce trails, badges, and community engagement across CRM and business cloud platforms.', techStack: [] },
-        { title: 'Google Analytics for Beginners', group: 'Skill-Validated Certifications', description: 'Google Analytics Academy certification demonstrating proficiency in web analytics, traffic tracking, and data-driven insights.', techStack: [] },
-        { title: 'Excel Advanced Formulas and Functions', group: 'Course Completion', description: 'Advanced Excel functions including VLOOKUP, INDEX-MATCH, and array formulas. Focuses on data analysis, complex calculations, and automating tasks using advanced formulas.', techStack: [] },
-        { title: 'Power BI Essential Training', group: 'Course Completion', description: 'Introduction to Power BI covering data preparation, data modeling, DAX (Data Analysis Expressions), and creating interactive dashboards and reports.', techStack: [] },
-        { title: 'SQL for Data Analysis', group: 'Course Completion', description: 'Learn SQL for querying and analyzing data with SELECT statements, JOINs, subqueries, and aggregate functions to extract insights from databases.', techStack: [] },
-        { title: 'Tableau Essential Training', group: 'Course Completion', description: 'Data visualization using Tableau including connecting to data sources, creating various charts, building dashboards, and sharing insights.', techStack: [] },
-        { title: 'SQL Essential Training', group: 'Course Completion', description: 'Basics of SQL including writing SELECT queries, using JOINs, and performing data aggregation for relational databases.', techStack: [] },
-        { title: 'NoSQL Essential Training', group: 'Course Completion', description: 'Introduction to NoSQL databases covering their types, advantages, and methods for storing and retrieving unstructured data.', techStack: [] },
-        { title: 'Microsoft Access Essential Training', group: 'Course Completion', description: 'Database management using Microsoft Access including creating tables, queries, forms, and reports to manage and analyze data.', techStack: [] },
-        { title: 'Windows Server 2022 Essential Training', group: 'Course Completion', description: 'Installation, configuration, and management of Windows Server 2022 including Active Directory, networking, and server maintenance.', techStack: [] },
-        { title: 'SEO Foundations', group: 'Course Completion', description: 'Introduction to Search Engine Optimization covering keyword research, on-page and off-page optimization, and SEO strategies for website visibility.', techStack: [] },
-        { title: 'Social Media Marketing Foundations', group: 'Course Completion', description: 'Basics of social media marketing including creating content, engaging with audiences, and measuring the effectiveness of campaigns.', techStack: [] },
-        { title: 'Digital Marketing Foundations', group: 'Course Completion', description: 'Overview of digital marketing strategies including email marketing, content marketing, and online advertising to drive traffic and conversions.', techStack: [] },
-        { title: 'Google Analytics 4 (GA4) Essential Training', group: 'Course Completion', description: 'Using Google Analytics 4 to track and analyze website traffic. Covers GA4 setup, report creation, and data interpretation for informed decisions.', techStack: [] },
-        { title: 'AWS Essential Training for Developers', group: 'Course Completion', description: 'Basics of Amazon Web Services for developers including cloud computing concepts, AWS services, and deploying applications on AWS.', techStack: [] },
-        { title: 'Azure Administration Essential Training', group: 'Course Completion', description: 'Introduction to Microsoft Azure covering management of Azure resources, virtual machines, and networking services.', techStack: [] },
-        { title: 'Google Cloud Foundations', group: 'Course Completion', description: 'Introduction to Google Cloud Platform covering core services, cloud computing concepts, and deploying and managing applications on GCP.', techStack: [] },
-        { title: 'Learning Alibaba Cloud', group: 'Course Completion', description: 'Basics of Alibaba Cloud covering services, cloud architecture, and deploying and managing applications on the platform.', techStack: [] },
-        { title: 'Learning Tinkercad', group: 'Course Completion', description: '3D design and modeling with Tinkercad including creating 3D models, using basic shapes, and designing for 3D printing.', techStack: [] }
-      ],
-      'industry_experiences': [
-        { title: 'Task 1: Role-Based Access Control for Return Order Workflow', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Implemented role-based access control restricting "Confirm" button to team leaders in return order workflow using PHP.', techStack: ['PHP'] },
-        { title: 'Task 2: Customer Purchase Order Enhancement', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Enhanced PO processing with interactive IRBM validation modal, displaying multi-table joined data.', techStack: ['PHP'] },
-        { title: 'Task 3: Email-to-Agency Inventory Matching Module', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Improved matching logic with agency-first display structure and searchable, sortable interface.', techStack: ['PHP'] },
-        { title: 'Task 4: Galileo SFA – Web Tablet Application', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Laravel-based Sales Force Automation system with customer visit planning, inventory checks, and dynamic pricing.', techStack: ['Laravel'] },
-        { title: 'Task 5: B2B SKU Maintenance Module Enhancement', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Enhanced SKU management with barcode support and data export functionality.', techStack: ['Laravel'] },
-        { title: 'Task 6: B2B LHM Customer PO Processing', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Automated PO workflow with multi-format support, UOM conversions, and data validation.', techStack: ['PHP'] },
-        { title: 'Task 7: Automated Daily VM Backup', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Automated Ubuntu VM backup routine using Windows batch scripts with compression and cleanup.', techStack: ['Windows Batch', 'VirtualBox'] },
-        { title: 'Task 8: Customer Data Update Logic Enhancement', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Improved update logic with staged processing and audit trails to maintain data integrity.', techStack: ['Laravel'] },
-        { title: 'Task 9: B2B LHS Purchase Order Processing', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Multi-retailer PO format support with file uploads, data transformation, and maintenance pages.', techStack: ['PHP'] },
-        { title: 'Task 10: Daily CN Return Management Module', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Centralized module for CN return records with filtering, pagination, and bulk export capabilities.', techStack: ['PHP'] }
-      ]
-    };
+      return Object.fromEntries(
+        Object.entries(categoryConfig).map(([key, category]) => [
+          key,
+          Array.isArray(category.items) ? category.items : []
+        ])
+      );
     }
 
     // Initialize the UI with loaded data
     async function initPortfolioUI() {
         categoriesData = await loadCategoriesData();
 
-        const categoryDescriptions = {
-          'projects': 'A range of projects across independent builds, technical experiments, and guided learning — showcasing how I think, solve, and execute.',
-          'milestones': 'Certifications, courses, and structured learning milestones that reflect my commitment to continuous improvement',
-          'industry_experiences': 'Real-world contributions from my time in the industry — practical tasks, problem-solving, and hands-on experience across different roles and environments.'
-    };
+    const categoryDescriptions = Object.fromEntries(
+      Object.entries(categoryConfig).map(([key, category]) => [key, category.description || ''])
+    );
 
-    const categoryGroups = {
-      'projects': ['Independent Projects', 'Technical Experiments', 'Guided Projects', 'Academic Projects'],
-      'milestones': ['Learning Paths', 'Skill-Validated Certifications', 'Course Completion'],
-      'industry_experiences': ['Application Analyst & Developer (Dec 2024 ~ Present)']
-    };
+    const categoryGroups = Object.fromEntries(
+      Object.entries(categoryConfig).map(([key, category]) => [
+        key,
+        Array.isArray(category.groups) ? category.groups : []
+      ])
+    );
 
     const activeGroupPerCategory = {};
     const pagesState = {};
@@ -205,13 +164,13 @@ document.addEventListener('DOMContentLoaded', function() {
             const docLink = document.createElement('a');
             docLink.href = 'javascript:void(0)';
             docLink.className = 'card-link';
-            docLink.textContent = 'Details';
+            docLink.textContent = uiText.details_label || '';
             docLink.onclick = () => openModal(item.title, item.description);
             cardLinks.appendChild(docLink);
             const demoLink = document.createElement('a');
             demoLink.href = '#';
             demoLink.className = 'card-link';
-            demoLink.textContent = 'Demo';
+            demoLink.textContent = uiText.demo_label || '';
             demoLink.onclick = (e) => e.preventDefault();
             cardLinks.appendChild(demoLink);
           }
@@ -230,7 +189,9 @@ document.addEventListener('DOMContentLoaded', function() {
       const pageInfo = document.getElementById('cardsPageInfo');
       if (prevBtn) prevBtn.disabled = page <= 0;
       if (nextBtn) nextBtn.disabled = page >= (totalPages - 1);
-      if (pageInfo) pageInfo.textContent = totalPages > 1 ? `Page ${page + 1} / ${totalPages}` : '';
+      if (pageInfo) pageInfo.textContent = totalPages > 1
+        ? `${uiText.page_label || ''} ${page + 1} / ${totalPages}`
+        : '';
     }
 
     function ensureCategoryState(category) {
@@ -297,7 +258,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
     ensureCategoryState('projects');
     animateCards('projects');
-    setActiveNavLink(document.querySelector('.nav-links a[data-category="projects"]'));
+    const initialLink = document.querySelector('.nav-links a[data-category="projects"]') || navLinks[0];
+    if (initialLink) setActiveNavLink(initialLink);
     }
 
     // Start loading and initialization
@@ -313,17 +275,21 @@ const modalBody = document.getElementById('modalBody');
 const closeModalBtn = document.getElementById('closeModalBtn');
 
 function openModal(title, content) {
+    if (!modal || !modalTitle || !modalBody) return;
     modalTitle.textContent = title;
-    modalBody.innerHTML = content;
+    modalBody.textContent = content;
     modal.classList.add('visible');
+    modal.setAttribute('aria-hidden', 'false');
 }
 
 function closeModal() {
+    if (!modal) return;
     modal.classList.remove('visible');
+    modal.setAttribute('aria-hidden', 'true');
 }
 
-closeModalBtn.addEventListener('click', closeModal);
-modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
 // ============================================
 // Skill Tags Rendering (from CMS JSON)
@@ -332,54 +298,19 @@ document.addEventListener('DOMContentLoaded', function() {
   const container = document.getElementById('skill-tags');
   if(!container) return;
 
-  const fallbackSkills = [
-    'Apache Server', 'CSS', 'Composer', 'Data Analytics', 'Git',
-    'Graphic Design', 'HTML', 'JavaScript', 'Laravel', 'Linux',
-    'MSSQL', 'MySQL', 'PHP', 'SQLite', 'Salesforce', 'Supabase',
-    'System Support', 'Video Editing', 'XAMPP'
-  ];
+  const skills = (Array.isArray(portfolioData.techStack) ? portfolioData.techStack : [])
+    .filter(skill => typeof skill === 'string' && skill.trim() !== '')
+    .map(skill => skill.trim())
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
-  // Try to fetch CMS list to get top-level tech_stack
-  fetch('contentmanagement.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'action=list'
-  })
-    .then(r => r.json())
-    .then(res => {
-      const techStack = res && res.data && Array.isArray(res.data.tech_stack)
-        ? res.data.tech_stack
-        : null;
-
-      let skills = (techStack && techStack.length) ? techStack : fallbackSkills;
-
-      // Always render alphabetically (A → Z)
-      skills = skills
-        .filter(s => typeof s === 'string' && s.trim() !== '')
-        .map(s => s.trim())
-        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-
-      // Clear and render
-      container.innerHTML = '';
-      skills.forEach((skill, index) => {
-        const span = document.createElement('span');
-        span.className = 'skill-tag';
-        span.style.animationDelay = `${(index * 0.1) + 0.2}s`;
-        span.textContent = skill;
-        container.appendChild(span);
-      });
-    })
-    .catch(() => {
-      // Fallback if CMS is unreachable
-      container.innerHTML = '';
-      fallbackSkills.forEach((skill, index) => {
-        const span = document.createElement('span');
-        span.className = 'skill-tag';
-        span.style.animationDelay = `${(index * 0.1) + 0.2}s`;
-        span.textContent = skill;
-        container.appendChild(span);
-      });
-    });
+  container.innerHTML = '';
+  skills.forEach((skill, index) => {
+    const span = document.createElement('span');
+    span.className = 'skill-tag';
+    span.style.animationDelay = `${(index * 0.1) + 0.2}s`;
+    span.textContent = skill;
+    container.appendChild(span);
+  });
 });
 
 // ============================================
@@ -388,6 +319,11 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
   const analyticsSliderTitle = document.getElementById('analyticsSliderTitle');
   const chartCanvas = document.getElementById('visitorAnalyticsChart');
+  if (!chartCanvas || typeof Chart === 'undefined') return;
+
+  const analyticsData = portfolioData.analytics || {};
+  const visitorData = analyticsData.visitors || { labels: [], values: [] };
+  const projectData = analyticsData.projects || { labels: [], values: [] };
   let analyticsChart = null;
   let currentSlideIndex = 0;
 
@@ -512,14 +448,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const chartSlides = [
     {
-      title: 'Visitor Analytics',
+      title: uiText.visitor_analytics_title || '',
       config: {
         type: 'line',
         data: {
-          labels: ['Aug 2025', 'Sep 2025', 'Oct 2025', 'Nov 2025', 'Dec 2025', 'Jan 2026', 'Feb 2026'],
+          labels: visitorData.labels || [],
           datasets: [{
-            label: 'Total Visits',
-            data: [3, 7, 5, 12, 9, 15, 8],
+            label: uiText.total_visits_label || '',
+            data: visitorData.values || [],
             borderColor: '#6defF8',
             backgroundColor: 'rgba(109, 239, 248, 0.1)',
             fill: true,
@@ -539,13 +475,13 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     },
     {
-      title: 'Project Analytics',
+      title: uiText.project_analytics_title || '',
       config: {
         type: 'doughnut',
         data: {
-          labels: ['HTML', 'CSS', 'JavaScript', 'Git', 'MySQL', 'Laravel', 'AWS', 'Python'],
+          labels: projectData.labels || [],
           datasets: [{
-            data: [11, 10, 8, 7, 3, 2, 2, 1],
+            data: projectData.values || [],
             backgroundColor: [
               'rgba(109, 239, 248, 1)',
               'rgba(109, 239, 248, 0.9)',

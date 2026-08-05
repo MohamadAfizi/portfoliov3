@@ -1,4 +1,36 @@
 {
+    "site": {
+        "language": "en",
+        "title": "Mohamad Afizi's Portfolio Website",
+        "name": "MOHAMAD AFIZI",
+        "role": "Full Stack Developer",
+        "location": "Kuala Lumpur, Malaysia",
+        "email": "fizzyjamal@gmail.com",
+        "favicon": "../../shared/media/images/dp.png",
+        "footer": "Build by Mohamad Afizi. Self-hosted. Self-made. 2026"
+    },
+    "navigation": {
+        "projects": {
+            "label": "projects",
+            "description": "A range of projects across independent builds, technical experiments, and guided learning — showcasing how I think, solve, and execute."
+        },
+        "milestones": {
+            "label": "milestones",
+            "description": "Certifications, courses, and structured learning milestones that reflect my commitment to continuous improvement"
+        },
+        "industry_experiences": {
+            "label": "industry experiences",
+            "description": "Real-world contributions from my time in the industry — practical tasks, problem-solving, and hands-on experience across different roles and environments."
+        }
+    },
+    "ui": {
+        "visitor_analytics_title": "Visitor Analytics",
+        "project_analytics_title": "Project Analytics",
+        "total_visits_label": "Total Visits",
+        "details_label": "Details",
+        "demo_label": "Demo",
+        "page_label": "Page"
+    },
     "profile_summary": "A Full Stack Developer based in Kuala Lumpur with hands-on experience in building web applications, internal systems, and data-driven tools. Proficient in PHP, Laravel, JavaScript, and SQL — with a passion for clean code, practical solutions, and continuous learning across both frontend and backend disciplines.",
     "tech_stack": [
         "Apache Server",

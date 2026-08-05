@@ -1,8 +1,8 @@
-<?php
-// Footer partial
-?>
-<footer>
-    <p>&copy; <?= date('Y') ?> <?= htmlspecialchars($GLOBALS['content']['globals']['site_name'] ?? 'Site') ?></p>
-</footer>
+<script src="assets/app.js"></script>
+<div class="site-footer">
+  <footer>
+    <span><?= e($site['footer'] ?? '') ?></span>
+  </footer>
+</div>
 </body>
 </html>

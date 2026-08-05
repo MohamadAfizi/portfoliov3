@@ -5,4 +5,5 @@ services:
       - "127.0.0.1:8082:80"
     volumes:
       - ./src:/var/www/html
+    command: bash -c "sed -ri 's/AllowOverride None/AllowOverride All/' /etc/apache2/apache2.conf && apache2-foreground"
     restart: unless-stopped

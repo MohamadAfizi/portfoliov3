@@ -1,15 +1,30 @@
 <?php
-function read_json_file(string $path): array {
-    if (!file_exists($path)) return [];
+declare(strict_types=1);
+
+function read_json_file(string $path): array
+{
+    if (!is_file($path) || !is_readable($path)) {
+        return [];
+    }
+
     $json = file_get_contents($path);
-    return json_decode($json, true) ?: [];
+    if ($json === false) {
+        return [];
+    }
+
+    try {
+        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+    } catch (JsonException) {
+        return [];
+    }
+
+    return is_array($data) ? $data : [];
 }
 
-function write_json_file(string $path, array $data): bool {
-    $dir = dirname($path);
-    if (!is_dir($dir)) mkdir($dir, 0755, true);
-    $tmp = $path . '.tmp';
-    $written = file_put_contents($tmp, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
-    if ($written === false) return false;
-    return rename($tmp, $path);
+function encode_json_for_html(array $data): string
+{
+    return json_encode(
+        $data,
+        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+    );
 }

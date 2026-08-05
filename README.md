@@ -27,11 +27,6 @@ portfoliov3/
     ├── media/
     │   ├── images/               # jpg, jpeg, png, webp, gif, svg
     │   └── videos/               # mp4, webm
-    ├── partials/                 # shared page shell
-    │   ├── header.php
-    │   ├── meta.php
-    │   ├── modal.php
-    │   └── footer.php
     └── sections/                 # homepage modules
         ├── hero.php
         ├── analytics.php

@@ -6,5 +6,29 @@
         "referrer": "http://localhost:8000/",
         "ip": "::",
         "location": []
+    },
+    {
+        "time": "2026-08-05T06:39:34+00:00",
+        "path": "/api/track-visitor.php",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.131.0 Chrome/148.0.7778.280 Electron/42.7.0 Safari/537.36",
+        "referrer": "http://localhost:8000/",
+        "ip": "::",
+        "location": []
+    },
+    {
+        "time": "2026-08-05T06:39:36+00:00",
+        "path": "/api/track-visitor.php",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.131.0 Chrome/148.0.7778.280 Electron/42.7.0 Safari/537.36",
+        "referrer": "http://localhost:8000/",
+        "ip": "::",
+        "location": []
+    },
+    {
+        "time": "2026-08-05T06:43:10+00:00",
+        "path": "/api/track-visitor.php",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.131.0 Chrome/148.0.7778.280 Electron/42.7.0 Safari/537.36",
+        "referrer": "http://localhost:8000/",
+        "ip": "::",
+        "location": []
     }
 ]

@@ -90,23 +90,30 @@ Modal sources must stay inside `src/content/readmes/` and use the `.md` extensio
 Industry Experience uses a separate text-only timeline structure:
 
 ```json
-{
-  "period": "Dec 2024 — Present",
-  "role": "Application Analyst & Developer",
-  "company": "",
-  "current": true,
-  "scope": "A privacy-safe summary of the role.",
-  "highlights": [
+"industry_experiences": {
+  "keyAchievements": [
     {
       "title": "Workflow enhancement",
-      "description": "Outcome-focused summary.",
-      "tags": ["PHP"]
+      "summary": "Outcome-focused and privacy-safe achievement."
+    }
+  ],
+  "roles": [
+    {
+      "from": "Dec 2024",
+      "to": "Present",
+      "role": "Application Analyst & Developer",
+      "scope": "A short, privacy-safe summary of the role.",
+      "current": true
     }
   ]
 }
 ```
 
-Timeline roles and their highlights follow their JSON order. Put the newest role first. The timeline intentionally has no card actions, subcategory controls, or pagination.
+To add a key achievement, insert another object inside `keyAchievements`. To add an experience, insert another object inside `roles`. Separate adjacent objects with commas. The page automatically creates achievement numbers, timeline dots, and connecting line segments.
+
+Roles follow their JSON order, so put the newest role first. Set only the active role to `"current": true`; its dot receives the filled glow while past-role dots stay hollow. Use `"to": "Present"` for the active role and a month plus year for completed roles. There is no hard-coded three-role limit.
+
+The timeline intentionally has no card actions, subcategory controls, or pagination.
 
 Keep JSON commas and quotes valid. A quick validation command is:
 

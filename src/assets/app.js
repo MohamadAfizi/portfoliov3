@@ -232,9 +232,60 @@ document.addEventListener('DOMContentLoaded', function() {
       if (typeof pagesState[category] === 'undefined') pagesState[category] = 0;
     }
 
-    function renderIndustryTimeline(experiences) {
+    function renderIndustryTimeline(experiences, achievements) {
       if (!industryTimeline) return;
       industryTimeline.innerHTML = '';
+
+      if (achievements.length > 0) {
+        const achievementSection = document.createElement('section');
+        achievementSection.className = 'industry-achievements';
+        achievementSection.setAttribute('aria-labelledby', 'industryAchievementsTitle');
+
+        const achievementCommand = document.createElement('p');
+        achievementCommand.className = 'industry-command';
+        achievementCommand.textContent = '$ career-impact --selected';
+        achievementSection.appendChild(achievementCommand);
+
+        const achievementHeading = document.createElement('h3');
+        achievementHeading.id = 'industryAchievementsTitle';
+        achievementHeading.textContent = 'Key achievements';
+        achievementSection.appendChild(achievementHeading);
+
+        const achievementList = document.createElement('ol');
+        achievementList.className = 'achievement-list';
+
+        achievements.forEach((achievement, index) => {
+          const item = document.createElement('li');
+          item.className = 'achievement-item';
+
+          const itemNumber = document.createElement('span');
+          itemNumber.className = 'achievement-number';
+          itemNumber.textContent = String(index + 1).padStart(2, '0');
+          itemNumber.setAttribute('aria-hidden', 'true');
+          item.appendChild(itemNumber);
+
+          const itemContent = document.createElement('div');
+          const itemTitle = document.createElement('h4');
+          itemTitle.textContent = achievement.title || '';
+          itemContent.appendChild(itemTitle);
+
+          if (achievement.summary) {
+            const itemSummary = document.createElement('p');
+            itemSummary.textContent = achievement.summary;
+            itemContent.appendChild(itemSummary);
+          }
+
+          item.appendChild(itemContent);
+          achievementList.appendChild(item);
+        });
+
+        achievementSection.appendChild(achievementList);
+        industryTimeline.appendChild(achievementSection);
+      }
+
+      const roles = document.createElement('div');
+      roles.className = 'timeline-roles';
+      roles.setAttribute('aria-label', 'Employment timeline');
 
       experiences.forEach(experience => {
         const role = document.createElement('article');
@@ -243,20 +294,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const period = document.createElement('p');
         period.className = 'timeline-period';
-        period.textContent = experience.period || '';
+        period.textContent = [experience.from, experience.to].filter(Boolean).join(' — ');
         role.appendChild(period);
 
         const heading = document.createElement('h3');
         heading.className = 'timeline-role-title';
         heading.textContent = experience.role || '';
         role.appendChild(heading);
-
-        if (experience.company) {
-          const company = document.createElement('p');
-          company.className = 'timeline-company';
-          company.textContent = experience.company;
-          role.appendChild(company);
-        }
 
         if (experience.scope) {
           const scope = document.createElement('p');
@@ -268,55 +312,10 @@ document.addEventListener('DOMContentLoaded', function() {
           role.appendChild(scope);
         }
 
-        const highlights = Array.isArray(experience.highlights) ? experience.highlights : [];
-        if (highlights.length > 0) {
-          const highlightList = document.createElement('ol');
-          highlightList.className = 'timeline-highlights';
-
-          highlights.forEach((highlight, index) => {
-            const item = document.createElement('li');
-            item.className = 'timeline-highlight';
-
-            const itemNumber = document.createElement('span');
-            itemNumber.className = 'timeline-highlight-number';
-            itemNumber.textContent = String(index + 1).padStart(2, '0');
-            itemNumber.setAttribute('aria-hidden', 'true');
-            item.appendChild(itemNumber);
-
-            const itemContent = document.createElement('div');
-            itemContent.className = 'timeline-highlight-content';
-
-            const itemTitle = document.createElement('h4');
-            itemTitle.textContent = highlight.title || '';
-            itemContent.appendChild(itemTitle);
-
-            if (highlight.description) {
-              const itemDescription = document.createElement('p');
-              itemDescription.textContent = highlight.description;
-              itemContent.appendChild(itemDescription);
-            }
-
-            const tags = Array.isArray(highlight.tags) ? highlight.tags : [];
-            if (tags.length > 0) {
-              const tagLine = document.createElement('p');
-              tagLine.className = 'timeline-tags';
-              tags.forEach(tag => {
-                const tagElement = document.createElement('span');
-                tagElement.textContent = `#${String(tag).toLowerCase().replace(/\s+/g, '-')}`;
-                tagLine.appendChild(tagElement);
-              });
-              itemContent.appendChild(tagLine);
-            }
-
-            item.appendChild(itemContent);
-            highlightList.appendChild(item);
-          });
-
-          role.appendChild(highlightList);
-        }
-
-        industryTimeline.appendChild(role);
+        roles.appendChild(role);
       });
+
+      industryTimeline.appendChild(roles);
     }
 
     function updateCategoryPresentation(category) {
@@ -336,7 +335,10 @@ document.addEventListener('DOMContentLoaded', function() {
         if (cardsWrapper) cardsWrapper.hidden = true;
         if (industryTimeline) {
           industryTimeline.hidden = false;
-          renderIndustryTimeline(categoriesData[category] || []);
+          const achievements = Array.isArray(categoryConfig[category]?.keyAchievements)
+            ? categoryConfig[category].keyAchievements
+            : [];
+          renderIndustryTimeline(categoriesData[category] || [], achievements);
           industryTimeline.classList.remove('animate');
           void industryTimeline.offsetWidth;
           industryTimeline.classList.add('animate');

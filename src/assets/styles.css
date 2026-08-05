@@ -343,9 +343,7 @@ section {
 }
 
 .industry-timeline {
-  position: relative;
   margin-top: 24px;
-  padding-left: 46px;
   opacity: 0;
   transform: translateY(12px);
 }
@@ -356,43 +354,99 @@ section {
   transition: opacity 0.45s ease, transform 0.45s ease;
 }
 
-.industry-timeline::before {
-  content: "";
-  position: absolute;
-  top: 7px;
-  bottom: 0;
-  left: 10px;
-  width: 1px;
-  background: linear-gradient(
-    to bottom,
-    var(--terminal-cyan),
-    rgba(109, 239, 248, 0.42) 72%,
-    rgba(109, 239, 248, 0.08)
-  );
-  box-shadow: 0 0 8px rgba(109, 239, 248, 0.12);
+.industry-achievements {
+  margin-bottom: 42px;
+}
+
+.industry-command {
+  margin: 0 0 4px;
+  color: var(--terminal-cyan);
+  font-size: 0.7rem;
+}
+
+.industry-achievements > h3 {
+  margin: 0;
+  color: #f3f4f6;
+  font-size: 1.05rem;
+  line-height: 1.4;
+}
+
+.achievement-list {
+  display: grid;
+  gap: 15px;
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.achievement-item {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 10px;
+}
+
+.achievement-number {
+  color: rgba(109, 239, 248, 0.6);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.achievement-number::before {
+  content: ">";
+  margin-right: 2px;
+}
+
+.achievement-item h4 {
+  margin: 0;
+  color: #e5e7eb;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.achievement-item p {
+  margin: 3px 0 0;
+  color: #9ca3af;
+  font-size: 0.76rem;
+  line-height: 1.6;
+}
+
+.timeline-roles {
+  position: relative;
 }
 
 .timeline-role {
   position: relative;
-  padding: 0 0 42px;
+  padding: 0 0 40px 46px;
 }
 
 .timeline-role:last-child {
-  padding-bottom: 4px;
+  padding-bottom: 0;
 }
 
 .timeline-role::before {
   content: "";
   position: absolute;
   top: 1px;
-  left: -42px;
-  z-index: 1;
+  left: 4px;
+  z-index: 2;
   box-sizing: border-box;
   width: 13px;
   height: 13px;
   border: 2px solid var(--terminal-cyan);
   border-radius: 50%;
   background: #050809;
+}
+
+.timeline-role:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 7px;
+  bottom: -7px;
+  left: 10px;
+  z-index: 1;
+  width: 1px;
+  background: rgba(109, 239, 248, 0.42);
+  box-shadow: 0 0 8px rgba(109, 239, 248, 0.1);
 }
 
 .timeline-role.is-current::before {
@@ -416,12 +470,6 @@ section {
   line-height: 1.4;
 }
 
-.timeline-company {
-  margin: 3px 0 0;
-  color: #9ca3af;
-  font-size: 0.78rem;
-}
-
 .timeline-scope {
   margin: 5px 0 0;
   color: #9ca3af;
@@ -434,78 +482,30 @@ section {
   font-weight: 600;
 }
 
-.timeline-highlights {
-  display: grid;
-  gap: 18px;
-  margin: 22px 0 0;
-  padding: 0;
-  list-style: none;
-}
-
-.timeline-highlight {
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-}
-
-.timeline-highlight-number {
-  padding-top: 1px;
-  color: rgba(109, 239, 248, 0.55);
-  font-size: 0.68rem;
-  line-height: 1.5;
-}
-
-.timeline-highlight-number::before {
-  content: ">";
-  margin-right: 2px;
-}
-
-.timeline-highlight-content h4 {
-  margin: 0;
-  color: #e5e7eb;
-  font-size: 0.86rem;
-  line-height: 1.45;
-}
-
-.timeline-highlight-content > p {
-  margin: 3px 0 0;
-  color: #9ca3af;
-  font-size: 0.76rem;
-  line-height: 1.6;
-}
-
-.timeline-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  color: rgba(109, 239, 248, 0.55) !important;
-  font-size: 0.64rem !important;
-}
-
 @media (max-width: 600px) {
   .industry-timeline {
     margin-top: 20px;
-    padding-left: 32px;
   }
 
-  .industry-timeline::before {
-    left: 6px;
+  .industry-achievements {
+    margin-bottom: 34px;
   }
 
-  .timeline-role::before {
-    left: -32px;
-  }
-
-  .timeline-highlight {
+  .achievement-item {
     grid-template-columns: 24px minmax(0, 1fr);
     gap: 7px;
   }
 
-  .timeline-highlights {
-    gap: 15px;
-    margin-top: 18px;
+  .timeline-role {
+    padding-left: 32px;
+  }
+
+  .timeline-role::before {
+    left: 0;
+  }
+
+  .timeline-role:not(:last-child)::after {
+    left: 6px;
   }
 }
 

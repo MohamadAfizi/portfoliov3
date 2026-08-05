@@ -836,86 +836,43 @@
             "techStack": []
         }
     ],
-    "industry_experiences": [
-        {
-            "period": "Dec 2024 — Present",
-            "role": "Application Analyst & Developer",
-            "company": "",
-            "current": true,
-            "scope": "Customer-service systems, production issue investigation, workflow enhancements, data integrity, and internal business applications.",
-            "highlights": [
-                {
-                    "title": "Role-Based Access Control for Return Order Workflow",
-                    "description": "Implemented role-based access control restricting the Confirm button to team leaders in the return order workflow.",
-                    "tags": [
-                        "PHP"
-                    ]
-                },
-                {
-                    "title": "Customer Purchase Order Enhancement",
-                    "description": "Enhanced PO processing with an interactive IRBM validation modal displaying multi-table joined data.",
-                    "tags": [
-                        "PHP"
-                    ]
-                },
-                {
-                    "title": "Email-to-Agency Inventory Matching Module",
-                    "description": "Improved matching logic with an agency-first display structure and a searchable, sortable interface.",
-                    "tags": [
-                        "PHP"
-                    ]
-                },
-                {
-                    "title": "Galileo SFA – Web Tablet Application",
-                    "description": "Developed a Sales Force Automation system with customer visit planning, inventory checks, and dynamic pricing.",
-                    "tags": [
-                        "Laravel"
-                    ]
-                },
-                {
-                    "title": "B2B SKU Maintenance Module Enhancement",
-                    "description": "Enhanced SKU management with barcode support and data export functionality.",
-                    "tags": [
-                        "Laravel"
-                    ]
-                },
-                {
-                    "title": "B2B LHM Customer PO Processing",
-                    "description": "Automated a purchase-order workflow with multi-format support, UOM conversions, and data validation.",
-                    "tags": [
-                        "PHP"
-                    ]
-                },
-                {
-                    "title": "Automated Daily VM Backup",
-                    "description": "Automated an Ubuntu VM backup routine using Windows batch scripts with compression and cleanup.",
-                    "tags": [
-                        "Windows Batch",
-                        "VirtualBox"
-                    ]
-                },
-                {
-                    "title": "Customer Data Update Logic Enhancement",
-                    "description": "Improved update logic with staged processing and audit trails to maintain data integrity.",
-                    "tags": [
-                        "Laravel"
-                    ]
-                },
-                {
-                    "title": "B2B LHS Purchase Order Processing",
-                    "description": "Added multi-retailer PO format support with file uploads, data transformation, and maintenance pages.",
-                    "tags": [
-                        "PHP"
-                    ]
-                },
-                {
-                    "title": "Daily CN Return Management Module",
-                    "description": "Built a centralized module for CN return records with filtering, pagination, and bulk export capabilities.",
-                    "tags": [
-                        "PHP"
-                    ]
-                }
-            ]
-        }
-    ]
+    "industry_experiences": {
+        "keyAchievements": [
+            {
+                "title": "Key Achievement One",
+                "summary": "Replace this with a measurable, privacy-safe outcome from your career."
+            },
+            {
+                "title": "Key Achievement Two",
+                "summary": "Replace this with an improvement you delivered and the value it created."
+            },
+            {
+                "title": "Key Achievement Three",
+                "summary": "Replace this with a strong technical or business achievement."
+            }
+        ],
+        "roles": [
+            {
+                "from": "Jan 2025",
+                "to": "Present",
+                "role": "Current Experience",
+                "scope": "Replace this with a short summary of your current responsibilities and area of impact.",
+                "current": true
+            },
+            {
+                "from": "Jan 2023",
+                "to": "Dec 2024",
+                "role": "Past Experience A",
+                "scope": "Replace this with a short summary of your responsibilities and contributions in this role.",
+                "current": false
+            },
+            {
+                "from": "Jan 2021",
+                "to": "Dec 2022",
+                "role": "Past Experience B",
+                "scope": "Replace this with a short summary of your responsibilities and contributions in this role.",
+                "current": false
+            }
+        ]
+    }
 }

@@ -51,6 +51,17 @@ Edit `src/data/content.json` in VS Code or Notepad. The homepage reads this file
 - `tech_stack`: skill tags.
 - `projects`, `milestones`, `industry_experiences`: card arrays.
 
+Card links are optional. Every card shows `[readme]` and `[view]`; an action remains visibly disabled until its URL is added:
+
+```json
+{
+  "title": "Project ABC",
+  "description": "Project summary.",
+  "readmeUrl": "https://github.com/MohamadAfizi/projectabc#readme",
+  "viewUrl": "https://fizzyjamal.com/projectabc"
+}
+```
+
 Keep JSON commas and quotes valid. A quick validation command is:
 
 ```powershell

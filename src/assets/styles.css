@@ -375,6 +375,8 @@ section {
   border: 1px solid #333;
   border-radius: 12px;
   padding: 20px;
+  display: flex;
+  flex-direction: column;
   transition: all 0.5s ease-in-out;
   opacity: 0;
   transform: translateY(20px);
@@ -532,7 +534,9 @@ section {
 .card-links {
   display: flex;
   justify-content: flex-end;
-  margin-top: 15px;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 15px;
 }
 
 .card-link {
@@ -541,70 +545,18 @@ section {
   text-decoration: none;
   cursor: pointer;
   transition: color 0.3s ease;
-  margin-left: 12px;
   font-size: 0.9rem;
 }
 
-.card-link:hover {
+.card-link:not(.card-link-disabled):hover {
   color: #0ff;
   text-decoration: underline;
 }
 
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 50;
-  opacity: 0;
-  visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
-.modal.visible {
-  opacity: 1;
-  visibility: visible;
-}
-
-.modal-content {
-  background: #111;
-  border-radius: 12px;
-  box-shadow: 0 0 30px rgba(109, 239, 248, 0.3);
-  width: 90%;
-  max-width: 672px;
-  padding: 24px;
-  position: relative;
-  border: 1px solid #4a5568;
-  max-height: 60vh;
-  overflow-y: auto;
-}
-
-.modal-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  color: #a0aec0;
-  font-size: 2rem;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
-.modal-title {
-  color: #6defF8;
-  font-size: 1.5rem;
-  font-weight: bold;
-  margin-top: 0;
-  margin-bottom: 1rem;
-}
-
-.modal-body {
-  color: #cbd5e0;
-  line-height: 1.6;
+.card-link-disabled {
+  color: #555;
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .page-doc-btn {
@@ -839,8 +791,7 @@ textarea {
 .tech-pill,
 .cards-pagination .page-btn,
 .page-doc-btn,
-.group-btn,
-.modal-content {
+.group-btn {
   border-radius: 3px;
 }
 
@@ -858,13 +809,9 @@ textarea {
   color: var(--terminal-cyan);
 }
 
-.modal-content {
-  background: #090e10;
-  border-color: var(--terminal-border);
-}
-
-.modal-title::before {
-  content: "./";
+.card-link-disabled::before,
+.card-link-disabled::after {
+  color: #555;
 }
 
 .category-description {

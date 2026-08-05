@@ -163,18 +163,42 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           if (cardLinks) {
             cardLinks.innerHTML = '';
-            const docLink = document.createElement('a');
-            docLink.href = 'javascript:void(0)';
-            docLink.className = 'card-link';
-            docLink.textContent = uiText.details_label || '';
-            docLink.onclick = () => openModal(item.title, item.description);
-            cardLinks.appendChild(docLink);
-            const demoLink = document.createElement('a');
-            demoLink.href = '#';
-            demoLink.className = 'card-link';
-            demoLink.textContent = uiText.demo_label || '';
-            demoLink.onclick = (e) => e.preventDefault();
-            cardLinks.appendChild(demoLink);
+            const actions = [
+              {
+                url: item.readmeUrl,
+                label: uiText.readme_label,
+                ariaLabel: `Read the ${item.title} README`,
+                unavailableLabel: `README URL not configured for ${item.title}`
+              },
+              {
+                url: item.viewUrl,
+                label: uiText.view_label,
+                ariaLabel: `View ${item.title}`,
+                unavailableLabel: `Product URL not configured for ${item.title}`
+              }
+            ];
+
+            actions.forEach(action => {
+              const hasUrl = typeof action.url === 'string' && /^https?:\/\//i.test(action.url);
+              const control = document.createElement(hasUrl ? 'a' : 'span');
+              control.className = hasUrl ? 'card-link' : 'card-link card-link-disabled';
+              control.textContent = action.label || '';
+
+              if (hasUrl) {
+                control.href = action.url;
+                control.setAttribute('aria-label', action.ariaLabel);
+                control.target = '_blank';
+                control.rel = 'noopener noreferrer';
+              } else {
+                control.setAttribute('aria-disabled', 'true');
+                control.setAttribute('aria-label', action.unavailableLabel);
+                control.title = action.unavailableLabel;
+              }
+
+              cardLinks.appendChild(control);
+            });
+
+            cardLinks.hidden = false;
           }
         } else {
           card.style.display = 'none';
@@ -267,31 +291,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start loading and initialization
     initPortfolioUI();
 });
-
-// ============================================
-// Modal Functionality
-// ============================================
-const modal = document.getElementById('detailsModal');
-const modalTitle = document.getElementById('modalTitle');
-const modalBody = document.getElementById('modalBody');
-const closeModalBtn = document.getElementById('closeModalBtn');
-
-function openModal(title, content) {
-    if (!modal || !modalTitle || !modalBody) return;
-    modalTitle.textContent = title;
-    modalBody.textContent = content;
-    modal.classList.add('visible');
-    modal.setAttribute('aria-hidden', 'false');
-}
-
-function closeModal() {
-    if (!modal) return;
-    modal.classList.remove('visible');
-    modal.setAttribute('aria-hidden', 'true');
-}
-
-if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
-if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
 // ============================================
 // Skill Tags Rendering (from CMS JSON)

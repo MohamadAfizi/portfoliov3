@@ -257,6 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
         achievements.forEach((achievement, index) => {
           const item = document.createElement('li');
           item.className = 'achievement-item';
+          item.style.setProperty('--item-index', index);
 
           const itemNumber = document.createElement('span');
           itemNumber.className = 'achievement-number';
@@ -287,9 +288,10 @@ document.addEventListener('DOMContentLoaded', function() {
       roles.className = 'timeline-roles';
       roles.setAttribute('aria-label', 'Employment timeline');
 
-      experiences.forEach(experience => {
+      experiences.forEach((experience, index) => {
         const role = document.createElement('article');
         role.className = 'timeline-role';
+        role.style.setProperty('--item-index', achievements.length + index);
         if (experience.current === true) role.classList.add('is-current');
 
         const period = document.createElement('p');

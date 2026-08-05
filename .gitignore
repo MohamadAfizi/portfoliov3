@@ -1,0 +1,8 @@
+.idea/
+.vscode/
+.env
+*.log
+*.tmp
+src/.env
+src/data/*.tmp
+src/data/visitors.json

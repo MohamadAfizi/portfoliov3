@@ -1,0 +1,5 @@
+Options -Indexes
+
+<Files "visitors.json">
+    Require all denied
+</Files>

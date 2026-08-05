@@ -1,7 +1,34 @@
+function readPortfolioData() {
+  const dataElement = document.getElementById('portfolio-data');
+  if (!dataElement) return {};
+
+  try {
+    return JSON.parse(dataElement.textContent || '{}');
+  } catch (error) {
+    console.warn('Unable to read portfolio data.', error);
+    return {};
+  }
+}
+
+const portfolioData = readPortfolioData();
+const uiText = portfolioData.ui || {};
+
+// Track asynchronously so IP-location lookup never delays the visible page.
+document.addEventListener('DOMContentLoaded', function() {
+  fetch('api/track-visitor.php', {
+    method: 'POST',
+    cache: 'no-store',
+    keepalive: true
+  }).catch(() => {
+    // Tracking is optional and must never interrupt the portfolio UI.
+  });
+});
+
 // ============================================
 // VANTA.js Background Setup
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
+    if (typeof VANTA === 'undefined' || !document.getElementById('vanta-bg')) return;
     VANTA.WAVES({
         el: "#vanta-bg",
         mouseControls: true,
@@ -23,6 +50,7 @@ document.addEventListener('DOMContentLoaded', function() {
 // Baffle.js Text Animation
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
+    if (typeof baffle === 'undefined' || !document.querySelector('.text__glitch')) return;
     const text = baffle(".text__glitch");
     text.set({ characters: "█▓█ ▒░/▒░ █░▒▓/ █▒▒ ▓▒▓/█ ░█▒/ ▒▓░ █<░▒ ▓/░>", speed: 50 });
     text.start();
@@ -35,7 +63,8 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const navLinks = document.querySelectorAll('.nav-links a');
     const cards = document.querySelectorAll('.cards-grid .card');
-    let isAnimating = false;
+    const cardsWrapper = document.querySelector('.cards-wrapper');
+    const industryTimeline = document.getElementById('industryTimeline');
     let categoriesData = {};
 
     function setActiveNavLink(linkElement) {
@@ -45,101 +74,32 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const itemsPerPage = 6;
 
-    // Fetch data from CMS API
+    const categoryConfig = portfolioData.categories || {};
+
+    // Content is loaded once by PHP from data/content.json and embedded as JSON.
     async function loadCategoriesData() {
-        try {
-            const response = await fetch('contentmanagement.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: 'action=list'
-            });
-            const result = await response.json();
-            if (result.ok && result.data) {
-                return result.data;
-            }
-        } catch (error) {
-            console.warn('Failed to load data from CMS API, using fallback:', error);
-        }
-        // Fallback hardcoded data if API fails
-        return {
-      'projects': [
-        { title: 'Library Book System', group: 'Independent Projects', description: 'A Laravel-based library application demonstrating MVC workflow with SQLite database integration, featuring book listing and pagination.', techStack: ['Laravel', 'SQLite', 'Git'] },
-        { title: 'LPT Highway Traffic Analysis', group: 'Independent Projects', description: 'Data analytics project analyzing traffic flow patterns at Gombak Toll Plaza using Microsoft Excel and custom datasets.', techStack: ['Data Analytics', 'Visualization', 'Microsoft Excel'] },
-        { title: 'Portfolio V3 CMS', group: 'Independent Projects', description: 'A content management system for portfolio website with full CRUD functionality, login security, and SQLite backend.', techStack: ['PHP', 'SQLite'] },
-        { title: 'Portfolio Website V3', group: 'Independent Projects', description: 'Dynamic portfolio website with API-driven content rendering, visitor analytics, and Chart.js visualizations.', techStack: ['PHP', 'SQLite', 'API', 'JavaScript'] },
-        { title: 'Portfolio Website V2', group: 'Independent Projects', description: 'PHP-based static portfolio hosted on on-premise mini server with Apache web server integration.', techStack: ['PHP'] },
-        { title: 'Linux On-Premise 24/7 Server', group: 'Independent Projects', description: 'Repurposed laptop transformed into a self-managed Linux server for hands-on learning in deployment and system management.', techStack: ['Linux', 'Apache', 'SFTP', 'Domain'] },
-        { title: 'Besikuning Dashboard', group: 'Independent Projects', description: 'Real-time gold market insights dashboard for Malaysian traders hosted on AWS S3 with Google Analytics.', techStack: ['PHP', 'AWS S3', 'Google Analytics'] },
-        { title: 'Portfolio Website V1', group: 'Independent Projects', description: 'Minimalist HTML portfolio showcasing projects with clean black-and-white design hosted on GitHub Pages.', techStack: ['HTML', 'GitHub Pages'] },
-        { title: 'Media & Multimedia Design', group: 'Independent Projects', description: 'Event media design including posters, banners, and promotional videos for university activities.', techStack: ['Graphic Design', 'Video Editing'] },
-        { title: 'Laravel Breeze Auth Sandbox', group: 'Technical Experiments', description: 'Isolated Laravel test app validating Breeze authentication flow including register, login, logout, and middleware route protection.', techStack: ['Laravel', 'Breeze', 'SQLite'] },
-        { title: 'REST API Token Lab', group: 'Technical Experiments', description: 'Small experiment project focused on issuing API tokens and validating protected endpoint access with basic role checks.', techStack: ['Laravel', 'API', 'Postman'] },
-        { title: 'Queue Worker Mini Lab', group: 'Technical Experiments', description: 'Sandbox setup to test queue job dispatch, worker processing, retry behavior, and failed-job handling.', techStack: ['Laravel', 'Queues', 'Redis'] },
-        { title: 'Finance Data Audit', group: 'Guided Projects', description: 'Hands-on financial data analysis using ACL v9 with data import, verification, and anomaly detection.', techStack: ['Data Audit', 'ACL'] },
-        { title: 'Interactive Excel Sales Dashboard', group: 'Guided Projects', description: 'Advanced Excel dashboard with large dataset handling, pivot tables, and data visualization techniques.', techStack: ['Data Analytics', 'Visualization', 'Microsoft Excel'] },
-        { title: 'IMR665 - Audio-Visual Records Management', group: 'Academic Projects', description: 'Documentary video production on Nasi Ambeng with editing, animations, subtitles, and sound effects.', techStack: ['Video Editing', 'Documentary'] },
-        { title: 'IMR664 - Electronic Record Keeping', group: 'Academic Projects', description: 'Business plan development for electronic records management system using Kordil EDMS.', techStack: ['EDMS'] },
-        { title: 'IMS457 - Multimedia for Information Professionals', group: 'Academic Projects', description: 'Interactive multimedia presentation titled "Eurotrip" developed with Macromedia Director and Adobe tools.', techStack: ['Swish Max', 'Adobe Photoshop'] },
-        { title: 'IMR606 - Digitization of Records', group: 'Academic Projects', description: 'Visual Basic application with Microsoft Access integration for student-job matching system.', techStack: ['Visual Basic', 'Microsoft Access'] },
-        { title: 'IMA656 - E-Learning Instruction Design', group: 'Academic Projects', description: '3R Awareness multimedia presentation promoting environmental consciousness with interactive design.', techStack: ['Swish Max', 'Adobe Photoshop'] },
-        { title: 'IMS506 - Database for Information Management', group: 'Academic Projects', description: 'Sport Centre Management System built with Microsoft Access including members, facilities, and bookings.', techStack: ['Microsoft Access'] },
-        { title: 'IMR555 - Electronic Records System', group: 'Academic Projects', description: 'Tuition centre management system with student registration, payments, attendance, and performance tracking.', techStack: ['Visual Basic', 'Microsoft Access'] },
-        { title: 'IMR505 - Records & Archival Repositories', group: 'Academic Projects', description: 'Complete records centre business plan with logo design and floor layout planning.', techStack: ['Adobe Illustrator'] },
-        { title: 'IMS456 - Web Design & Content Management', group: 'Academic Projects', description: 'Personal and university websites using HTML and CSS with media integration.', techStack: ['HTML', 'CSS', 'JavaScript'] }
-      ],
-      'milestones': [
-        { title: 'W3Schools', group: 'Learning Paths', description: 'Completed beginner Excel course covering core spreadsheet fundamentals and essential data organization skills.', techStack: [] },
-        { title: 'Microsoft Learn', group: 'Learning Paths', description: 'Showcasing completed Azure paths, badges, and learning achievements in cloud computing and enterprise solutions.', techStack: [] },
-        { title: 'Salesforce Trailblazer', group: 'Skill-Validated Certifications', description: 'Showcasing Salesforce trails, badges, and community engagement across CRM and business cloud platforms.', techStack: [] },
-        { title: 'Google Analytics for Beginners', group: 'Skill-Validated Certifications', description: 'Google Analytics Academy certification demonstrating proficiency in web analytics, traffic tracking, and data-driven insights.', techStack: [] },
-        { title: 'Excel Advanced Formulas and Functions', group: 'Course Completion', description: 'Advanced Excel functions including VLOOKUP, INDEX-MATCH, and array formulas. Focuses on data analysis, complex calculations, and automating tasks using advanced formulas.', techStack: [] },
-        { title: 'Power BI Essential Training', group: 'Course Completion', description: 'Introduction to Power BI covering data preparation, data modeling, DAX (Data Analysis Expressions), and creating interactive dashboards and reports.', techStack: [] },
-        { title: 'SQL for Data Analysis', group: 'Course Completion', description: 'Learn SQL for querying and analyzing data with SELECT statements, JOINs, subqueries, and aggregate functions to extract insights from databases.', techStack: [] },
-        { title: 'Tableau Essential Training', group: 'Course Completion', description: 'Data visualization using Tableau including connecting to data sources, creating various charts, building dashboards, and sharing insights.', techStack: [] },
-        { title: 'SQL Essential Training', group: 'Course Completion', description: 'Basics of SQL including writing SELECT queries, using JOINs, and performing data aggregation for relational databases.', techStack: [] },
-        { title: 'NoSQL Essential Training', group: 'Course Completion', description: 'Introduction to NoSQL databases covering their types, advantages, and methods for storing and retrieving unstructured data.', techStack: [] },
-        { title: 'Microsoft Access Essential Training', group: 'Course Completion', description: 'Database management using Microsoft Access including creating tables, queries, forms, and reports to manage and analyze data.', techStack: [] },
-        { title: 'Windows Server 2022 Essential Training', group: 'Course Completion', description: 'Installation, configuration, and management of Windows Server 2022 including Active Directory, networking, and server maintenance.', techStack: [] },
-        { title: 'SEO Foundations', group: 'Course Completion', description: 'Introduction to Search Engine Optimization covering keyword research, on-page and off-page optimization, and SEO strategies for website visibility.', techStack: [] },
-        { title: 'Social Media Marketing Foundations', group: 'Course Completion', description: 'Basics of social media marketing including creating content, engaging with audiences, and measuring the effectiveness of campaigns.', techStack: [] },
-        { title: 'Digital Marketing Foundations', group: 'Course Completion', description: 'Overview of digital marketing strategies including email marketing, content marketing, and online advertising to drive traffic and conversions.', techStack: [] },
-        { title: 'Google Analytics 4 (GA4) Essential Training', group: 'Course Completion', description: 'Using Google Analytics 4 to track and analyze website traffic. Covers GA4 setup, report creation, and data interpretation for informed decisions.', techStack: [] },
-        { title: 'AWS Essential Training for Developers', group: 'Course Completion', description: 'Basics of Amazon Web Services for developers including cloud computing concepts, AWS services, and deploying applications on AWS.', techStack: [] },
-        { title: 'Azure Administration Essential Training', group: 'Course Completion', description: 'Introduction to Microsoft Azure covering management of Azure resources, virtual machines, and networking services.', techStack: [] },
-        { title: 'Google Cloud Foundations', group: 'Course Completion', description: 'Introduction to Google Cloud Platform covering core services, cloud computing concepts, and deploying and managing applications on GCP.', techStack: [] },
-        { title: 'Learning Alibaba Cloud', group: 'Course Completion', description: 'Basics of Alibaba Cloud covering services, cloud architecture, and deploying and managing applications on the platform.', techStack: [] },
-        { title: 'Learning Tinkercad', group: 'Course Completion', description: '3D design and modeling with Tinkercad including creating 3D models, using basic shapes, and designing for 3D printing.', techStack: [] }
-      ],
-      'industry_experiences': [
-        { title: 'Task 1: Role-Based Access Control for Return Order Workflow', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Implemented role-based access control restricting "Confirm" button to team leaders in return order workflow using PHP.', techStack: ['PHP'] },
-        { title: 'Task 2: Customer Purchase Order Enhancement', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Enhanced PO processing with interactive IRBM validation modal, displaying multi-table joined data.', techStack: ['PHP'] },
-        { title: 'Task 3: Email-to-Agency Inventory Matching Module', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Improved matching logic with agency-first display structure and searchable, sortable interface.', techStack: ['PHP'] },
-        { title: 'Task 4: Galileo SFA – Web Tablet Application', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Laravel-based Sales Force Automation system with customer visit planning, inventory checks, and dynamic pricing.', techStack: ['Laravel'] },
-        { title: 'Task 5: B2B SKU Maintenance Module Enhancement', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Enhanced SKU management with barcode support and data export functionality.', techStack: ['Laravel'] },
-        { title: 'Task 6: B2B LHM Customer PO Processing', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Automated PO workflow with multi-format support, UOM conversions, and data validation.', techStack: ['PHP'] },
-        { title: 'Task 7: Automated Daily VM Backup', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Automated Ubuntu VM backup routine using Windows batch scripts with compression and cleanup.', techStack: ['Windows Batch', 'VirtualBox'] },
-        { title: 'Task 8: Customer Data Update Logic Enhancement', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Improved update logic with staged processing and audit trails to maintain data integrity.', techStack: ['Laravel'] },
-        { title: 'Task 9: B2B LHS Purchase Order Processing', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Multi-retailer PO format support with file uploads, data transformation, and maintenance pages.', techStack: ['PHP'] },
-        { title: 'Task 10: Daily CN Return Management Module', group: 'Application Analyst & Developer (Dec 2024 ~ Present)', description: 'Centralized module for CN return records with filtering, pagination, and bulk export capabilities.', techStack: ['PHP'] }
-      ]
-    };
+      return Object.fromEntries(
+        Object.entries(categoryConfig).map(([key, category]) => [
+          key,
+          Array.isArray(category.items) ? category.items : []
+        ])
+      );
     }
 
     // Initialize the UI with loaded data
     async function initPortfolioUI() {
         categoriesData = await loadCategoriesData();
 
-        const categoryDescriptions = {
-          'projects': 'A range of projects across independent builds, technical experiments, and guided learning — showcasing how I think, solve, and execute.',
-          'milestones': 'Certifications, courses, and structured learning milestones that reflect my commitment to continuous improvement',
-          'industry_experiences': 'Real-world contributions from my time in the industry — practical tasks, problem-solving, and hands-on experience across different roles and environments.'
-    };
+    const categoryDescriptions = Object.fromEntries(
+      Object.entries(categoryConfig).map(([key, category]) => [key, category.description || ''])
+    );
 
-    const categoryGroups = {
-      'projects': ['Independent Projects', 'Technical Experiments', 'Guided Projects', 'Academic Projects'],
-      'milestones': ['Learning Paths', 'Skill-Validated Certifications', 'Course Completion'],
-      'industry_experiences': ['Application Analyst & Developer (Dec 2024 ~ Present)']
-    };
+    const categoryGroups = Object.fromEntries(
+      Object.entries(categoryConfig).map(([key, category]) => [
+        key,
+        Array.isArray(category.groups) ? category.groups : []
+      ])
+    );
 
     const activeGroupPerCategory = {};
     const pagesState = {};
@@ -161,6 +121,12 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', () => {
           activeGroupPerCategory[category] = (activeGroupPerCategory[category] === group) ? null : group;
           pagesState[category] = 0;
+          groupFilter.querySelectorAll('.group-btn').forEach(groupButton => {
+            groupButton.classList.toggle(
+              'active',
+              groupButton.dataset.group === activeGroupPerCategory[category]
+            );
+          });
           animateCards(category);
         });
         groupFilter.appendChild(btn);
@@ -189,6 +155,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (index < pageItems.length) {
           card.style.display = '';
           const item = pageItems[index];
+          const itemNumber = (page * itemsPerPage) + index + 1;
+          card.dataset.terminalLabel = `[${String(category).toUpperCase()}_${String(itemNumber).padStart(2, '0')}]`;
           if (cardTitle) cardTitle.textContent = item.title;
           if (cardText) cardText.textContent = item.description || '';
           if (cardTechstack) {
@@ -202,18 +170,43 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           if (cardLinks) {
             cardLinks.innerHTML = '';
-            const docLink = document.createElement('a');
-            docLink.href = 'javascript:void(0)';
-            docLink.className = 'card-link';
-            docLink.textContent = 'Details';
-            docLink.onclick = () => openModal(item.title, item.description);
-            cardLinks.appendChild(docLink);
-            const demoLink = document.createElement('a');
-            demoLink.href = '#';
-            demoLink.className = 'card-link';
-            demoLink.textContent = 'Demo';
-            demoLink.onclick = (e) => e.preventDefault();
-            cardLinks.appendChild(demoLink);
+            const actions = Array.isArray(item.actions) ? item.actions : [];
+
+            actions.forEach(action => {
+              const label = typeof action.label === 'string' ? action.label.toLowerCase() : '';
+              const isExternal = action.type === 'external';
+              const isModal = action.type === 'modal';
+              const hasUrl = isExternal && typeof action.url === 'string' && /^https?:\/\//i.test(action.url);
+              const hasSource = isModal
+                && typeof action.source === 'string'
+                && /^content\/readmes\/[a-z0-9/_-]+\.md$/i.test(action.source);
+              const isEnabled = hasUrl || hasSource;
+              const elementName = isEnabled ? (isModal ? 'button' : 'a') : 'span';
+              const control = document.createElement(elementName);
+              control.className = isEnabled ? 'card-link' : 'card-link card-link-disabled';
+              control.textContent = label;
+
+              if (hasUrl) {
+                control.href = action.url;
+                control.setAttribute('aria-label', `Open ${label} for ${item.title}`);
+                control.target = '_blank';
+                control.rel = 'noopener noreferrer';
+              } else if (hasSource) {
+                control.type = 'button';
+                control.setAttribute('aria-label', `Open ${label} for ${item.title}`);
+                control.addEventListener('click', () => {
+                  openReadmeModal(item.title, action.source, control);
+                });
+              } else {
+                control.setAttribute('aria-disabled', 'true');
+                control.setAttribute('aria-label', `${label} is not configured for ${item.title}`);
+                control.title = `${label} is not configured`;
+              }
+
+              cardLinks.appendChild(control);
+            });
+
+            cardLinks.hidden = actions.length === 0;
           }
         } else {
           card.style.display = 'none';
@@ -230,15 +223,135 @@ document.addEventListener('DOMContentLoaded', function() {
       const pageInfo = document.getElementById('cardsPageInfo');
       if (prevBtn) prevBtn.disabled = page <= 0;
       if (nextBtn) nextBtn.disabled = page >= (totalPages - 1);
-      if (pageInfo) pageInfo.textContent = totalPages > 1 ? `Page ${page + 1} / ${totalPages}` : '';
+      if (pageInfo) pageInfo.textContent = totalPages > 1
+        ? `${uiText.page_label || ''} ${page + 1} / ${totalPages}`
+        : '';
     }
 
     function ensureCategoryState(category) {
       if (typeof pagesState[category] === 'undefined') pagesState[category] = 0;
     }
 
-    function animateCards(category) {
-      isAnimating = true;
+    function renderIndustryTimeline(experiences, achievements) {
+      if (!industryTimeline) return;
+      industryTimeline.innerHTML = '';
+
+      if (achievements.length > 0) {
+        const achievementSection = document.createElement('section');
+        achievementSection.className = 'industry-achievements';
+        achievementSection.setAttribute('aria-labelledby', 'industryAchievementsTitle');
+
+        const achievementCommand = document.createElement('p');
+        achievementCommand.className = 'industry-command';
+        achievementCommand.textContent = '$ career-impact --selected';
+        achievementSection.appendChild(achievementCommand);
+
+        const achievementHeading = document.createElement('h3');
+        achievementHeading.id = 'industryAchievementsTitle';
+        achievementHeading.textContent = 'Key achievements';
+        achievementSection.appendChild(achievementHeading);
+
+        const achievementList = document.createElement('ol');
+        achievementList.className = 'achievement-list';
+
+        achievements.forEach((achievement, index) => {
+          const item = document.createElement('li');
+          item.className = 'achievement-item';
+          item.style.setProperty('--item-index', index);
+
+          const itemNumber = document.createElement('span');
+          itemNumber.className = 'achievement-number';
+          itemNumber.textContent = String(index + 1).padStart(2, '0');
+          itemNumber.setAttribute('aria-hidden', 'true');
+          item.appendChild(itemNumber);
+
+          const itemContent = document.createElement('div');
+          const itemTitle = document.createElement('h4');
+          itemTitle.textContent = achievement.title || '';
+          itemContent.appendChild(itemTitle);
+
+          if (achievement.summary) {
+            const itemSummary = document.createElement('p');
+            itemSummary.textContent = achievement.summary;
+            itemContent.appendChild(itemSummary);
+          }
+
+          item.appendChild(itemContent);
+          achievementList.appendChild(item);
+        });
+
+        achievementSection.appendChild(achievementList);
+        industryTimeline.appendChild(achievementSection);
+      }
+
+      const roles = document.createElement('div');
+      roles.className = 'timeline-roles';
+      roles.setAttribute('aria-label', 'Employment timeline');
+
+      experiences.forEach((experience, index) => {
+        const role = document.createElement('article');
+        role.className = 'timeline-role';
+        role.style.setProperty('--item-index', achievements.length + index);
+        if (experience.current === true) role.classList.add('is-current');
+
+        const period = document.createElement('p');
+        period.className = 'timeline-period';
+        period.textContent = [experience.from, experience.to].filter(Boolean).join(' — ');
+        role.appendChild(period);
+
+        const heading = document.createElement('h3');
+        heading.className = 'timeline-role-title';
+        heading.textContent = experience.role || '';
+        role.appendChild(heading);
+
+        const positions = Array.isArray(experience.positions) ? experience.positions : [];
+        if (positions.length > 0) {
+          const positionList = document.createElement('ul');
+          positionList.className = 'timeline-positions';
+
+          positions.forEach(position => {
+            const item = document.createElement('li');
+            const line = document.createElement('p');
+            line.className = 'timeline-position-line';
+
+            const roleName = document.createElement('strong');
+            roleName.textContent = position.role || '';
+            line.appendChild(roleName);
+
+            const periodText = [position.from, position.to].filter(Boolean).join(' — ');
+            if (periodText) {
+              const positionPeriod = document.createElement('span');
+              positionPeriod.className = 'timeline-position-period';
+              positionPeriod.textContent = periodText;
+              line.appendChild(positionPeriod);
+            }
+
+            item.appendChild(line);
+            positionList.appendChild(item);
+          });
+
+          role.appendChild(positionList);
+        }
+
+        if (experience.scope) {
+          const scope = document.createElement('p');
+          scope.className = positions.length > 0 ? 'timeline-scope timeline-scope-summary' : 'timeline-scope';
+          if (positions.length === 0) {
+            const scopeLabel = document.createElement('span');
+            scopeLabel.textContent = 'scope: ';
+            scope.appendChild(scopeLabel);
+          }
+          scope.appendChild(document.createTextNode(experience.scope));
+          role.appendChild(scope);
+        }
+
+        roles.appendChild(role);
+      });
+
+      industryTimeline.appendChild(roles);
+    }
+
+    function updateCategoryPresentation(category) {
       const descElement = document.getElementById('categoryDescription');
       if (descElement) {
         descElement.classList.remove('active');
@@ -248,6 +361,30 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 150);
       }
       updateGroupingButtons(category);
+    }
+
+    function animateCards(category) {
+      if (category === 'industry_experiences') {
+        if (cardsWrapper) cardsWrapper.hidden = true;
+        if (industryTimeline) {
+          industryTimeline.hidden = false;
+          const achievements = Array.isArray(categoryConfig[category]?.keyAchievements)
+            ? categoryConfig[category].keyAchievements
+            : [];
+          renderIndustryTimeline(categoriesData[category] || [], achievements);
+          industryTimeline.classList.remove('animate');
+          void industryTimeline.offsetWidth;
+          industryTimeline.classList.add('animate');
+        }
+        return;
+      }
+
+      if (cardsWrapper) cardsWrapper.hidden = false;
+      if (industryTimeline) {
+        industryTimeline.hidden = true;
+        industryTimeline.classList.remove('animate');
+      }
+
       cards.forEach((card, index) => {
         setTimeout(() => { card.classList.remove('animate'); card.classList.add('exit'); }, index * 80);
       });
@@ -257,15 +394,6 @@ document.addEventListener('DOMContentLoaded', function() {
         cards.forEach((card, index) => {
           setTimeout(() => { card.classList.add('animate'); }, index * 100);
         });
-        setTimeout(() => {
-          const groupFilter = document.getElementById('groupingFilter');
-          if (groupFilter) {
-            groupFilter.classList.remove('animate');
-            void groupFilter.offsetWidth;
-            groupFilter.classList.add('animate');
-          }
-          isAnimating = false;
-        }, 1000);
       }, 600);
     }
 
@@ -276,6 +404,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const category = e.currentTarget.dataset.category;
         activeGroupPerCategory[category] = null;
         pagesState[category] = 0;
+        updateCategoryPresentation(category);
         animateCards(category);
       });
     });
@@ -296,8 +425,10 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     ensureCategoryState('projects');
+    updateCategoryPresentation('projects');
     animateCards('projects');
-    setActiveNavLink(document.querySelector('.nav-links a[data-category="projects"]'));
+    const initialLink = document.querySelector('.nav-links a[data-category="projects"]') || navLinks[0];
+    if (initialLink) setActiveNavLink(initialLink);
     }
 
     // Start loading and initialization
@@ -305,25 +436,184 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
-// Modal Functionality
+// Local Markdown README Modal
 // ============================================
-const modal = document.getElementById('detailsModal');
-const modalTitle = document.getElementById('modalTitle');
-const modalBody = document.getElementById('modalBody');
-const closeModalBtn = document.getElementById('closeModalBtn');
+const readmeModal = document.getElementById('readmeModal');
+const readmeModalTitle = document.getElementById('readmeModalTitle');
+const readmeModalBody = document.getElementById('readmeModalBody');
+const closeReadmeModalBtn = document.getElementById('closeReadmeModalBtn');
+let readmeReturnFocus = null;
 
-function openModal(title, content) {
-    modalTitle.textContent = title;
-    modalBody.innerHTML = content;
-    modal.classList.add('visible');
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
-function closeModal() {
-    modal.classList.remove('visible');
+function renderInlineMarkdown(value) {
+  const codeTokens = [];
+  const tokenized = String(value).replace(/`([^`]+)`/g, (_, code) => {
+    const token = `\u0000CODE${codeTokens.length}\u0000`;
+    codeTokens.push(`<code>${escapeHtml(code)}</code>`);
+    return token;
+  });
+
+  let html = escapeHtml(tokenized);
+  html = html.replace(
+    /!\[([^\]]*)\]\(((?:https?:\/\/|\/?media\/)[^\s)"'<>]+)\)/gi,
+    '<img src="$2" alt="$1" loading="lazy">'
+  );
+  html = html.replace(
+    /\[([^\]]+)\]\(((?:https?:\/\/|\/)[^\s)"'<>]+)\)/gi,
+    '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>'
+  );
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/__([^_]+)__/g, '<strong>$1</strong>');
+  html = html.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>');
+
+  codeTokens.forEach((code, index) => {
+    html = html.replace(`\u0000CODE${index}\u0000`, code);
+  });
+
+  return html;
 }
 
-closeModalBtn.addEventListener('click', closeModal);
-modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+function renderMarkdown(markdown) {
+  const lines = String(markdown).replace(/\r\n?/g, '\n').split('\n');
+  const output = [];
+  let paragraph = [];
+  let listType = null;
+  let inCodeBlock = false;
+  let codeLines = [];
+
+  const flushParagraph = () => {
+    if (paragraph.length === 0) return;
+    output.push(`<p>${renderInlineMarkdown(paragraph.join(' '))}</p>`);
+    paragraph = [];
+  };
+
+  const closeList = () => {
+    if (!listType) return;
+    output.push(`</${listType}>`);
+    listType = null;
+  };
+
+  lines.forEach(line => {
+    if (/^```/.test(line)) {
+      flushParagraph();
+      closeList();
+      if (inCodeBlock) {
+        output.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+        codeLines = [];
+      }
+      inCodeBlock = !inCodeBlock;
+      return;
+    }
+
+    if (inCodeBlock) {
+      codeLines.push(line);
+      return;
+    }
+
+    if (line.trim() === '') {
+      flushParagraph();
+      closeList();
+      return;
+    }
+
+    const heading = line.match(/^(#{1,6})\s+(.+)$/);
+    if (heading) {
+      flushParagraph();
+      closeList();
+      const level = heading[1].length;
+      output.push(`<h${level}>${renderInlineMarkdown(heading[2])}</h${level}>`);
+      return;
+    }
+
+    if (/^\s*(---+|___+)\s*$/.test(line)) {
+      flushParagraph();
+      closeList();
+      output.push('<hr>');
+      return;
+    }
+
+    const unorderedItem = line.match(/^\s*[-*+]\s+(.+)$/);
+    const orderedItem = line.match(/^\s*\d+\.\s+(.+)$/);
+    if (unorderedItem || orderedItem) {
+      flushParagraph();
+      const nextListType = unorderedItem ? 'ul' : 'ol';
+      if (listType !== nextListType) {
+        closeList();
+        listType = nextListType;
+        output.push(`<${listType}>`);
+      }
+      output.push(`<li>${renderInlineMarkdown((unorderedItem || orderedItem)[1])}</li>`);
+      return;
+    }
+
+    const quote = line.match(/^>\s?(.*)$/);
+    if (quote) {
+      flushParagraph();
+      closeList();
+      output.push(`<blockquote>${renderInlineMarkdown(quote[1])}</blockquote>`);
+      return;
+    }
+
+    paragraph.push(line.trim());
+  });
+
+  if (inCodeBlock) {
+    output.push(`<pre><code>${escapeHtml(codeLines.join('\n'))}</code></pre>`);
+  }
+  flushParagraph();
+  closeList();
+  return output.join('');
+}
+
+async function openReadmeModal(title, source, trigger) {
+  if (!readmeModal || !readmeModalTitle || !readmeModalBody || !closeReadmeModalBtn) return;
+  if (!/^content\/readmes\/[a-z0-9/_-]+\.md$/i.test(source)) return;
+
+  readmeReturnFocus = trigger || document.activeElement;
+  readmeModalTitle.textContent = title;
+  readmeModalBody.innerHTML = '<p class="readme-status">Loading README…</p>';
+  readmeModal.classList.add('visible');
+  readmeModal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+  closeReadmeModalBtn.focus();
+
+  try {
+    const response = await fetch(source, { headers: { Accept: 'text/markdown, text/plain' } });
+    if (!response.ok) throw new Error(`README request failed with HTTP ${response.status}`);
+    readmeModalBody.innerHTML = renderMarkdown(await response.text());
+  } catch (error) {
+    readmeModalBody.innerHTML = '<p class="readme-status readme-status-error">README is temporarily unavailable.</p>';
+  }
+}
+
+function closeReadmeModal() {
+  if (!readmeModal) return;
+  readmeModal.classList.remove('visible');
+  readmeModal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+  if (readmeReturnFocus && typeof readmeReturnFocus.focus === 'function') readmeReturnFocus.focus();
+  readmeReturnFocus = null;
+}
+
+if (closeReadmeModalBtn) closeReadmeModalBtn.addEventListener('click', closeReadmeModal);
+if (readmeModal) {
+  readmeModal.addEventListener('click', event => {
+    if (event.target === readmeModal) closeReadmeModal();
+  });
+}
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && readmeModal && readmeModal.classList.contains('visible')) {
+    closeReadmeModal();
+  }
+});
 
 // ============================================
 // Skill Tags Rendering (from CMS JSON)
@@ -332,64 +622,45 @@ document.addEventListener('DOMContentLoaded', function() {
   const container = document.getElementById('skill-tags');
   if(!container) return;
 
-  const fallbackSkills = [
-    'Apache Server', 'CSS', 'Composer', 'Data Analytics', 'Git',
-    'Graphic Design', 'HTML', 'JavaScript', 'Laravel', 'Linux',
-    'MSSQL', 'MySQL', 'PHP', 'SQLite', 'Salesforce', 'Supabase',
-    'System Support', 'Video Editing', 'XAMPP'
-  ];
+  const skills = (Array.isArray(portfolioData.techStack) ? portfolioData.techStack : [])
+    .filter(skill => typeof skill === 'string' && skill.trim() !== '')
+    .map(skill => skill.trim())
+    .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
 
-  // Try to fetch CMS list to get top-level tech_stack
-  fetch('contentmanagement.php', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: 'action=list'
-  })
-    .then(r => r.json())
-    .then(res => {
-      const techStack = res && res.data && Array.isArray(res.data.tech_stack)
-        ? res.data.tech_stack
-        : null;
-
-      let skills = (techStack && techStack.length) ? techStack : fallbackSkills;
-
-      // Always render alphabetically (A → Z)
-      skills = skills
-        .filter(s => typeof s === 'string' && s.trim() !== '')
-        .map(s => s.trim())
-        .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
-
-      // Clear and render
-      container.innerHTML = '';
-      skills.forEach((skill, index) => {
-        const span = document.createElement('span');
-        span.className = 'skill-tag';
-        span.style.animationDelay = `${(index * 0.1) + 0.2}s`;
-        span.textContent = skill;
-        container.appendChild(span);
-      });
-    })
-    .catch(() => {
-      // Fallback if CMS is unreachable
-      container.innerHTML = '';
-      fallbackSkills.forEach((skill, index) => {
-        const span = document.createElement('span');
-        span.className = 'skill-tag';
-        span.style.animationDelay = `${(index * 0.1) + 0.2}s`;
-        span.textContent = skill;
-        container.appendChild(span);
-      });
-    });
+  container.innerHTML = '';
+  skills.forEach((skill, index) => {
+    const span = document.createElement('span');
+    span.className = 'skill-tag';
+    span.style.animationDelay = `${(index * 0.1) + 0.2}s`;
+    span.textContent = skill;
+    container.appendChild(span);
+  });
 });
 
 // ============================================
-// Analytics Charts with Custom Plugins
+// Visitor Analytics & GitHub Contributions
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
   const analyticsSliderTitle = document.getElementById('analyticsSliderTitle');
   const chartCanvas = document.getElementById('visitorAnalyticsChart');
+  const githubGraph = document.getElementById('githubContributionGraph');
+  if (!chartCanvas || !githubGraph) return;
+
+  const analyticsData = portfolioData.analytics || {};
+  const visitorData = analyticsData.visitors || { labels: [], values: [] };
+  const githubConfig = portfolioData.github || {};
   let analyticsChart = null;
   let currentSlideIndex = 0;
+  let githubRequest = null;
+  let analyticsTransitionTimer = null;
+  let analyticsTitleTimer = null;
+  const analyticsSlides = [chartCanvas, githubGraph];
+  const prefersReducedMotion = typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  if (typeof Chart !== 'undefined') {
+    Chart.defaults.font.family = "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace";
+  }
 
   const dataLabelPlugin = {
     id: 'dataLabelPlugin',
@@ -398,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const pluginOpts = (chart.options && chart.options.plugins && chart.options.plugins.dataLabelPlugin) || {};
       if (pluginOpts.enabled === false) return;
       const color = pluginOpts.color || '#ffffff';
-      const font = pluginOpts.font || '12px Arial';
+      const font = pluginOpts.font || "12px 'JetBrains Mono', monospace";
       const bg = pluginOpts.background || 'rgba(0,0,0,0.65)';
       const padding = pluginOpts.padding || 6;
       const position = pluginOpts.position || 'top';
@@ -455,181 +726,280 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
-  const doughnutCalloutPlugin = {
-    id: 'doughnutCalloutPlugin',
-    afterDatasetsDraw(chart) {
-      if (chart.config.type !== 'doughnut') return;
-      const meta = chart.getDatasetMeta(0);
-      const dataset = chart.data.datasets && chart.data.datasets[0];
-      if (!meta || !meta.data || !dataset || !dataset.data) return;
-
-      const ctx = chart.ctx;
-      ctx.save();
-      ctx.font = '12px Arial';
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-      ctx.lineWidth = 1;
-
-      meta.data.forEach((arc, i) => {
-        const value = dataset.data[i];
-        if (value === null || value === undefined) return;
-        const label = (chart.data.labels && chart.data.labels[i]) ? chart.data.labels[i] : `Item ${i + 1}`;
-
-        const angle = (arc.startAngle + arc.endAngle) / 2;
-        const sx = arc.x + Math.cos(angle) * arc.outerRadius;
-        const sy = arc.y + Math.sin(angle) * arc.outerRadius;
-        const ex = arc.x + Math.cos(angle) * (arc.outerRadius + 18);
-        const ey = arc.y + Math.sin(angle) * (arc.outerRadius + 18);
-        const isRight = Math.cos(angle) >= 0;
-        const text = `${label}: ${value}`;
-        const textWidth = ctx.measureText(text).width;
-        const canvasWidth = chart.canvas ? chart.canvas.width : 0;
-        const canvasHeight = chart.canvas ? chart.canvas.height : 0;
-        const edgePad = 6;
-        let tx = ex + (isRight ? 12 : -12);
-        let ty = ey;
-
-        if (isRight) {
-          tx = Math.min(tx, canvasWidth - textWidth - edgePad);
-        } else {
-          tx = Math.max(tx, textWidth + edgePad);
-        }
-        ty = Math.max(10, Math.min(ty, canvasHeight - 10));
-
-        ctx.beginPath();
-        ctx.moveTo(sx, sy);
-        ctx.lineTo(ex, ey);
-        ctx.stroke();
-
-        ctx.textAlign = isRight ? 'left' : 'right';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(text, tx, ty);
-      });
-
-      ctx.restore();
-    }
-  };
-
-  const chartSlides = [
-    {
-      title: 'Visitor Analytics',
-      config: {
-        type: 'line',
-        data: {
-          labels: ['Aug 2025', 'Sep 2025', 'Oct 2025', 'Nov 2025', 'Dec 2025', 'Jan 2026', 'Feb 2026'],
-          datasets: [{
-            label: 'Total Visits',
-            data: [3, 7, 5, 12, 9, 15, 8],
-            borderColor: '#6defF8',
-            backgroundColor: 'rgba(109, 239, 248, 0.1)',
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: '#6defF8',
-            pointBorderColor: '#000',
-            pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: '#6defF8'
-          }]
-        },
-        options: {
-          plugins: {
-            dataLabelPlugin: { enabled: true, position: 'top', color: '#ffffff', font: '12px Arial' },
-            legend: { display: false }
-          }
-        }
-      }
+  const visitorChartConfig = {
+    type: 'line',
+    data: {
+      labels: visitorData.labels || [],
+      datasets: [{
+        label: uiText.total_visits_label || '',
+        data: visitorData.values || [],
+        borderColor: '#6defF8',
+        backgroundColor: 'rgba(109, 239, 248, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#6defF8',
+        pointBorderColor: '#000',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#6defF8'
+      }]
     },
-    {
-      title: 'Project Analytics',
-      config: {
-        type: 'doughnut',
-        data: {
-          labels: ['HTML', 'CSS', 'JavaScript', 'Git', 'MySQL', 'Laravel', 'AWS', 'Python'],
-          datasets: [{
-            data: [11, 10, 8, 7, 3, 2, 2, 1],
-            backgroundColor: [
-              'rgba(109, 239, 248, 1)',
-              'rgba(109, 239, 248, 0.9)',
-              'rgba(109, 239, 248, 0.8)',
-              'rgba(109, 239, 248, 0.7)',
-              'rgba(109, 239, 248, 0.5)',
-              'rgba(109, 239, 248, 0.4)',
-              'rgba(109, 239, 248, 0.3)',
-              'rgba(109, 239, 248, 0.2)'
-            ],
-            borderColor: '#000',
-            borderWidth: 2,
-            offset: [15, 13, 11, 9, 7, 5, 5, 3],
-            spacing: 3,
-            borderRadius: 4
-          }]
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 18, bottom: 6 } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: '#888', precision: 0, stepSize: 1, grace: '25%' }
         },
-        options: {
-          plugins: {
-            dataLabelPlugin: { enabled: false },
-            legend: { display: false },
-            tooltip: {
-              enabled: false,
-              backgroundColor: 'rgba(0,0,0,0.95)',
-              titleColor: '#fff',
-              bodyColor: '#6defF8',
-              borderColor: '#6defF8',
-              borderWidth: 2
-            }
-          },
-          cutout: '60%',
-          layout: { padding: { top: 25, bottom: 25, left: 25, right: 25 } }
-        }
-      }
-    }
-  ];
-
-  const baseOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    layout: { padding: { top: 18, bottom: 6 } },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-        ticks: { color: '#888', precision: 0, stepSize: 1, grace: '25%' }
+        x: { grid: { display: false }, ticks: { color: '#888' } }
       },
-      x: { grid: { display: false }, ticks: { color: '#888' } }
-    },
-    plugins: {
-      dataLabelPlugin: { enabled: true, position: 'top', color: '#ffffff', font: '12px Arial' },
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: '#333',
-        borderWidth: 1,
-        displayColors: false
+      plugins: {
+        dataLabelPlugin: { enabled: true, position: 'top', color: '#ffffff', font: "12px 'JetBrains Mono', monospace" },
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          titleColor: '#fff',
+          bodyColor: '#fff',
+          borderColor: '#333',
+          borderWidth: 1,
+          displayColors: false
+        }
       }
     }
   };
 
-  function renderChartSlide(index) {
-    const slide = chartSlides[index];
-    const isDoughnut = slide.config.type === 'doughnut';
-    const mergedOptions = Object.assign({}, baseOptions, slide.config.options || {});
-    if (isDoughnut) {
-      delete mergedOptions.scales;
+  function showGithubFallback() {
+    githubGraph.innerHTML = '';
+
+    const status = document.createElement('p');
+    status.className = 'github-status github-status-error';
+    status.textContent = githubConfig.unavailable_text || '';
+    githubGraph.appendChild(status);
+
+    if (githubConfig.profile_url) {
+      const link = document.createElement('a');
+      link.className = 'github-profile-link';
+      link.href = githubConfig.profile_url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = githubConfig.view_profile_label || githubConfig.profile_url;
+      githubGraph.appendChild(link);
     }
-    if (analyticsSliderTitle) analyticsSliderTitle.textContent = slide.title;
-    if (analyticsChart) analyticsChart.destroy();
-    analyticsChart = new Chart(chartCanvas, {
-      type: slide.config.type,
-      data: slide.config.data,
-      plugins: isDoughnut ? [doughnutCalloutPlugin] : [dataLabelPlugin],
-      options: mergedOptions
-    });
   }
 
-  renderChartSlide(currentSlideIndex);
+  function contributionText(day) {
+    const count = Number(day.count) || 0;
+    const noun = count === 1
+      ? (githubConfig.contribution_singular || 'contribution')
+      : (githubConfig.contribution_plural || 'contributions');
+    const date = new Date(`${day.date}T00:00:00Z`).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC'
+    });
+    return `${count} ${noun} ${githubConfig.on_label || 'on'} ${date}`;
+  }
+
+  function renderGithubCalendar(data) {
+    const weeks = Array.isArray(data.weeks) ? data.weeks : [];
+    if (weeks.length === 0) {
+      showGithubFallback();
+      return;
+    }
+
+    githubGraph.innerHTML = '';
+
+    const summary = document.createElement('div');
+    summary.className = 'github-summary';
+
+    const total = document.createElement('span');
+    total.className = 'github-total';
+    total.textContent = `${Number(data.totalContributions) || 0} ${githubConfig.subtitle || ''}`.trim();
+    summary.appendChild(total);
+
+    const profileLink = document.createElement('a');
+    profileLink.className = 'github-profile-link';
+    profileLink.href = data.profileUrl || githubConfig.profile_url || '#';
+    profileLink.target = '_blank';
+    profileLink.rel = 'noopener noreferrer';
+    profileLink.textContent = githubConfig.view_profile_label || data.username || '';
+    summary.appendChild(profileLink);
+    githubGraph.appendChild(summary);
+
+    const scroller = document.createElement('div');
+    scroller.className = 'github-calendar-scroll';
+
+    const calendar = document.createElement('div');
+    calendar.className = 'github-calendar';
+
+    const months = document.createElement('div');
+    months.className = 'github-months';
+    months.style.gridTemplateColumns = `repeat(${weeks.length}, var(--github-cell-size))`;
+
+    let previousMonth = '';
+    weeks.forEach((week, weekIndex) => {
+      const firstDay = Array.isArray(week.days) ? week.days[0] : null;
+      if (!firstDay || !firstDay.date) return;
+      const date = new Date(`${firstDay.date}T00:00:00Z`);
+      const monthKey = `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
+      if (monthKey === previousMonth || date.getUTCDate() > 7) return;
+
+      const label = document.createElement('span');
+      label.textContent = date.toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' });
+      label.style.gridColumn = `${weekIndex + 1} / span 4`;
+      months.appendChild(label);
+      previousMonth = monthKey;
+    });
+    calendar.appendChild(months);
+
+    const weekGrid = document.createElement('div');
+    weekGrid.className = 'github-weeks';
+
+    weeks.forEach(week => {
+      const weekColumn = document.createElement('div');
+      weekColumn.className = 'github-week';
+
+      (Array.isArray(week.days) ? week.days : []).forEach(day => {
+        const cell = document.createElement('span');
+        const level = String(day.level || 'NONE').toLowerCase().replaceAll('_', '-');
+        const label = contributionText(day);
+        cell.className = 'github-day';
+        cell.dataset.level = level;
+        cell.title = label;
+        cell.setAttribute('role', 'img');
+        cell.setAttribute('aria-label', label);
+        weekColumn.appendChild(cell);
+      });
+
+      weekGrid.appendChild(weekColumn);
+    });
+
+    calendar.appendChild(weekGrid);
+    scroller.appendChild(calendar);
+    githubGraph.appendChild(scroller);
+
+    const legend = document.createElement('div');
+    legend.className = 'github-legend';
+
+    const less = document.createElement('span');
+    less.textContent = githubConfig.less_label || '';
+    legend.appendChild(less);
+
+    ['none', 'first-quartile', 'second-quartile', 'third-quartile', 'fourth-quartile'].forEach(level => {
+      const cell = document.createElement('span');
+      cell.className = 'github-day';
+      cell.dataset.level = level;
+      cell.setAttribute('aria-hidden', 'true');
+      legend.appendChild(cell);
+    });
+
+    const more = document.createElement('span');
+    more.textContent = githubConfig.more_label || '';
+    legend.appendChild(more);
+    githubGraph.appendChild(legend);
+  }
+
+  function loadGithubContributions() {
+    if (githubRequest) return githubRequest;
+
+    githubGraph.innerHTML = '';
+    const loading = document.createElement('p');
+    loading.className = 'github-status';
+    loading.textContent = githubConfig.loading_text || '';
+    githubGraph.appendChild(loading);
+
+    githubRequest = fetch('api/github-contributions.php', {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin'
+    })
+      .then(response => {
+        if (!response.ok) throw new Error(`GitHub endpoint returned ${response.status}`);
+        return response.json();
+      })
+      .then(result => {
+        if (!result || result.ok !== true || !result.data) throw new Error('GitHub data was unavailable');
+        renderGithubCalendar(result.data);
+      })
+      .catch(() => {
+        showGithubFallback();
+      });
+
+    return githubRequest;
+  }
+
+  function ensureVisitorAnalytics() {
+    if (!analyticsChart && typeof Chart !== 'undefined') {
+      analyticsChart = new Chart(chartCanvas, {
+        ...visitorChartConfig,
+        plugins: [dataLabelPlugin]
+      });
+    }
+  }
+
+  function updateAnalyticsTitle(text, animate) {
+    if (!analyticsSliderTitle) return;
+    if (!animate || prefersReducedMotion) {
+      analyticsSliderTitle.textContent = text;
+      return;
+    }
+
+    if (analyticsTitleTimer) clearTimeout(analyticsTitleTimer);
+    analyticsSliderTitle.classList.add('is-changing');
+    analyticsTitleTimer = setTimeout(() => {
+      analyticsSliderTitle.textContent = text;
+      analyticsSliderTitle.classList.remove('is-changing');
+    }, 180);
+  }
+
+  function renderAnalyticsSlide(index, animate = true) {
+    const incomingSlide = analyticsSlides[index];
+    const outgoingSlide = analyticsSlides[index === 1 ? 0 : 1];
+    const title = index === 1
+      ? (githubConfig.title || '')
+      : (uiText.visitor_analytics_title || '');
+
+    if (index === 1) {
+      loadGithubContributions();
+    } else {
+      ensureVisitorAnalytics();
+    }
+
+    if (analyticsTransitionTimer) clearTimeout(analyticsTransitionTimer);
+    incomingSlide.hidden = false;
+    incomingSlide.setAttribute('aria-hidden', 'false');
+    outgoingSlide.setAttribute('aria-hidden', 'true');
+
+    if (!animate || prefersReducedMotion) {
+      outgoingSlide.classList.remove('is-active');
+      outgoingSlide.hidden = true;
+      incomingSlide.classList.add('is-active');
+      updateAnalyticsTitle(title, false);
+      if (index === 0 && analyticsChart) analyticsChart.resize();
+      return;
+    }
+
+    incomingSlide.classList.remove('is-active');
+    void incomingSlide.offsetWidth;
+    requestAnimationFrame(() => {
+      outgoingSlide.classList.remove('is-active');
+      incomingSlide.classList.add('is-active');
+      if (index === 0 && analyticsChart) analyticsChart.resize();
+    });
+
+    updateAnalyticsTitle(title, true);
+    analyticsTransitionTimer = setTimeout(() => {
+      outgoingSlide.hidden = true;
+    }, 500);
+  }
+
+  renderAnalyticsSlide(currentSlideIndex, false);
 
   setInterval(function() {
-    currentSlideIndex = (currentSlideIndex + 1) % chartSlides.length;
-    renderChartSlide(currentSlideIndex);
+    currentSlideIndex = (currentSlideIndex + 1) % 2;
+    renderAnalyticsSlide(currentSlideIndex);
   }, 10000);
 });

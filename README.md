@@ -113,6 +113,27 @@ To add a key achievement, insert another object inside `keyAchievements`. To add
 
 Roles follow their JSON order, so put the newest role first. Set only the active role to `"current": true`; its dot receives the filled glow while past-role dots stay hollow. Use `"to": "Present"` for the active role and a month plus year for completed roles. There is no hard-coded three-role limit.
 
+Several earlier positions can be compiled under one connected timeline role with the optional `positions` array:
+
+```json
+{
+  "from": "Jan 2015",
+  "to": "Dec 2019",
+  "role": "Earlier Career",
+  "scope": "Summary connecting earlier work to the current career direction.",
+  "current": false,
+  "positions": [
+    {
+      "role": "Earlier role",
+      "from": "Jan 2015",
+      "to": "Dec 2016"
+    }
+  ]
+}
+```
+
+Add another object to `positions` to append another compact role-and-duration row. The parent Earlier Career entry receives one timeline dot, while its compiled positions do not create extra dots.
+
 The timeline intentionally has no card actions, subcategory controls, or pagination.
 
 Keep JSON commas and quotes valid. A quick validation command is:

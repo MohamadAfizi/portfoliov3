@@ -872,6 +872,40 @@
                 "role": "Past Experience B",
                 "scope": "Replace this with a short summary of your responsibilities and contributions in this role.",
                 "current": false
+            },
+            {
+                "from": "Jan 2015",
+                "to": "Dec 2019",
+                "role": "Earlier Career",
+                "scope": "Roles spanning immigration consulting, HR operations, payroll administration, and records management — building the operational and compliance foundation that now informs how I design business systems.",
+                "current": false,
+                "positions": [
+                    {
+                        "role": "HR Operations Executive",
+                        "from": "Jul 2019",
+                        "to": "Dec 2019"
+                    },
+                    {
+                        "role": "Administrative Assistant (Grade N19)",
+                        "from": "May 2018",
+                        "to": "June 2019"
+                    },
+                    {
+                        "role": "ESD Consultant",
+                        "from": "Nov 2017",
+                        "to": "Apr 2018"
+                    },
+                    {
+                        "role": "Visa & Immigration Consultant",
+                        "from": "Feb 2016",
+                        "to": "Oct 2017"
+                    },
+                    {
+                        "role": "Operation Assistant",
+                        "from": "Jan 2015",
+                        "to": "Jan 2016"
+                    }
+                ]
             }
         ]
     }

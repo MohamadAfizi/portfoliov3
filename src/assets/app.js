@@ -304,12 +304,43 @@ document.addEventListener('DOMContentLoaded', function() {
         heading.textContent = experience.role || '';
         role.appendChild(heading);
 
+        const positions = Array.isArray(experience.positions) ? experience.positions : [];
+        if (positions.length > 0) {
+          const positionList = document.createElement('ul');
+          positionList.className = 'timeline-positions';
+
+          positions.forEach(position => {
+            const item = document.createElement('li');
+            const line = document.createElement('p');
+            line.className = 'timeline-position-line';
+
+            const roleName = document.createElement('strong');
+            roleName.textContent = position.role || '';
+            line.appendChild(roleName);
+
+            const periodText = [position.from, position.to].filter(Boolean).join(' — ');
+            if (periodText) {
+              const positionPeriod = document.createElement('span');
+              positionPeriod.className = 'timeline-position-period';
+              positionPeriod.textContent = periodText;
+              line.appendChild(positionPeriod);
+            }
+
+            item.appendChild(line);
+            positionList.appendChild(item);
+          });
+
+          role.appendChild(positionList);
+        }
+
         if (experience.scope) {
           const scope = document.createElement('p');
-          scope.className = 'timeline-scope';
-          const scopeLabel = document.createElement('span');
-          scopeLabel.textContent = 'scope: ';
-          scope.appendChild(scopeLabel);
+          scope.className = positions.length > 0 ? 'timeline-scope timeline-scope-summary' : 'timeline-scope';
+          if (positions.length === 0) {
+            const scopeLabel = document.createElement('span');
+            scopeLabel.textContent = 'scope: ';
+            scope.appendChild(scopeLabel);
+          }
           scope.appendChild(document.createTextNode(experience.scope));
           role.appendChild(scope);
         }
@@ -621,6 +652,11 @@ document.addEventListener('DOMContentLoaded', function() {
   let analyticsChart = null;
   let currentSlideIndex = 0;
   let githubRequest = null;
+  let analyticsTransitionTimer = null;
+  let analyticsTitleTimer = null;
+  const analyticsSlides = [chartCanvas, githubGraph];
+  const prefersReducedMotion = typeof window.matchMedia === 'function'
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   if (typeof Chart !== 'undefined') {
     Chart.defaults.font.family = "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace";
@@ -895,12 +931,8 @@ document.addEventListener('DOMContentLoaded', function() {
     return githubRequest;
   }
 
-  function renderVisitorAnalytics() {
-    githubGraph.hidden = true;
-    chartCanvas.hidden = false;
-    if (analyticsSliderTitle) analyticsSliderTitle.textContent = uiText.visitor_analytics_title || '';
-    if (analyticsChart) analyticsChart.destroy();
-    if (typeof Chart !== 'undefined') {
+  function ensureVisitorAnalytics() {
+    if (!analyticsChart && typeof Chart !== 'undefined') {
       analyticsChart = new Chart(chartCanvas, {
         ...visitorChartConfig,
         plugins: [dataLabelPlugin]
@@ -908,26 +940,63 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  function renderGithubContributions() {
-    chartCanvas.hidden = true;
-    githubGraph.hidden = false;
-    if (analyticsSliderTitle) analyticsSliderTitle.textContent = githubConfig.title || '';
-    if (analyticsChart) {
-      analyticsChart.destroy();
-      analyticsChart = null;
+  function updateAnalyticsTitle(text, animate) {
+    if (!analyticsSliderTitle) return;
+    if (!animate || prefersReducedMotion) {
+      analyticsSliderTitle.textContent = text;
+      return;
     }
-    loadGithubContributions();
+
+    if (analyticsTitleTimer) clearTimeout(analyticsTitleTimer);
+    analyticsSliderTitle.classList.add('is-changing');
+    analyticsTitleTimer = setTimeout(() => {
+      analyticsSliderTitle.textContent = text;
+      analyticsSliderTitle.classList.remove('is-changing');
+    }, 180);
   }
 
-  function renderAnalyticsSlide(index) {
+  function renderAnalyticsSlide(index, animate = true) {
+    const incomingSlide = analyticsSlides[index];
+    const outgoingSlide = analyticsSlides[index === 1 ? 0 : 1];
+    const title = index === 1
+      ? (githubConfig.title || '')
+      : (uiText.visitor_analytics_title || '');
+
     if (index === 1) {
-      renderGithubContributions();
+      loadGithubContributions();
     } else {
-      renderVisitorAnalytics();
+      ensureVisitorAnalytics();
     }
+
+    if (analyticsTransitionTimer) clearTimeout(analyticsTransitionTimer);
+    incomingSlide.hidden = false;
+    incomingSlide.setAttribute('aria-hidden', 'false');
+    outgoingSlide.setAttribute('aria-hidden', 'true');
+
+    if (!animate || prefersReducedMotion) {
+      outgoingSlide.classList.remove('is-active');
+      outgoingSlide.hidden = true;
+      incomingSlide.classList.add('is-active');
+      updateAnalyticsTitle(title, false);
+      if (index === 0 && analyticsChart) analyticsChart.resize();
+      return;
+    }
+
+    incomingSlide.classList.remove('is-active');
+    void incomingSlide.offsetWidth;
+    requestAnimationFrame(() => {
+      outgoingSlide.classList.remove('is-active');
+      incomingSlide.classList.add('is-active');
+      if (index === 0 && analyticsChart) analyticsChart.resize();
+    });
+
+    updateAnalyticsTitle(title, true);
+    analyticsTransitionTimer = setTimeout(() => {
+      outgoingSlide.hidden = true;
+    }, 500);
   }
 
-  renderAnalyticsSlide(currentSlideIndex);
+  renderAnalyticsSlide(currentSlideIndex, false);
 
   setInterval(function() {
     currentSlideIndex = (currentSlideIndex + 1) % 2;

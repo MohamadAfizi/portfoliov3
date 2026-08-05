@@ -838,94 +838,83 @@
     ],
     "industry_experiences": [
         {
-            "title": "Task 1: Role-Based Access Control for Return Order Workflow",
-            "actions": [],
-            "group": "Application Analyst & Developer (Dec 2024 ~ Present)",
-            "description": "Implemented role-based access control restricting \"Confirm\" button to team leaders in return order workflow using PHP.",
-            "techStack": [
-                "PHP"
-            ]
-        },
-        {
-            "title": "Task 2: Customer Purchase Order Enhancement",
-            "actions": [],
-            "group": "Application Analyst & Developer (Dec 2024 ~ Present)",
-            "description": "Enhanced PO processing with interactive IRBM validation modal, displaying multi-table joined data.",
-            "techStack": [
-                "PHP"
-            ]
-        },
-        {
-            "title": "Task 3: Email-to-Agency Inventory Matching Module",
-            "actions": [],
-            "group": "Application Analyst & Developer (Dec 2024 ~ Present)",
-            "description": "Improved matching logic with agency-first display structure and searchable, sortable interface.",
-            "techStack": [
-                "PHP"
-            ]
-        },
-        {
-            "title": "Task 4: Galileo SFA – Web Tablet Application",
-            "actions": [],
-            "group": "Application Analyst & Developer (Dec 2024 ~ Present)",
-            "description": "Laravel-based Sales Force Automation system with customer visit planning, inventory checks, and dynamic pricing.",
-            "techStack": [
-                "Laravel"
-            ]
-        },
-        {
-            "title": "Task 5: B2B SKU Maintenance Module Enhancement",
-            "actions": [],
-            "group": "Application Analyst & Developer (Dec 2024 ~ Present)",
-            "description": "Enhanced SKU management with barcode support and data export functionality.",
-            "techStack": [
-                "Laravel"
-            ]
-        },
-        {
-            "title": "Task 6: B2B LHM Customer PO Processing",
-            "actions": [],
-            "group": "Application Analyst & Developer (Dec 2024 ~ Present)",
-            "description": "Automated PO workflow with multi-format support, UOM conversions, and data validation.",
-            "techStack": [
-                "PHP"
-            ]
-        },
-        {
-            "title": "Task 7: Automated Daily VM Backup",
-            "actions": [],
-            "group": "Application Analyst & Developer (Dec 2024 ~ Present)",
-            "description": "Automated Ubuntu VM backup routine using Windows batch scripts with compression and cleanup.",
-            "techStack": [
-                "Windows Batch",
-                "VirtualBox"
-            ]
-        },
-        {
-            "title": "Task 8: Customer Data Update Logic Enhancement",
-            "actions": [],
-            "group": "Application Analyst & Developer (Dec 2024 ~ Present)",
-            "description": "Improved update logic with staged processing and audit trails to maintain data integrity.",
-            "techStack": [
-                "Laravel"
-            ]
-        },
-        {
-            "title": "Task 9: B2B LHS Purchase Order Processing",
-            "actions": [],
-            "group": "Application Analyst & Developer (Dec 2024 ~ Present)",
-            "description": "Multi-retailer PO format support with file uploads, data transformation, and maintenance pages.",
-            "techStack": [
-                "PHP"
-            ]
-        },
-        {
-            "title": "Task 10: Daily CN Return Management Module",
-            "actions": [],
-            "group": "Application Analyst & Developer (Dec 2024 ~ Present)",
-            "description": "Centralized module for CN return records with filtering, pagination, and bulk export capabilities.",
-            "techStack": [
-                "PHP"
+            "period": "Dec 2024 — Present",
+            "role": "Application Analyst & Developer",
+            "company": "",
+            "current": true,
+            "scope": "Customer-service systems, production issue investigation, workflow enhancements, data integrity, and internal business applications.",
+            "highlights": [
+                {
+                    "title": "Role-Based Access Control for Return Order Workflow",
+                    "description": "Implemented role-based access control restricting the Confirm button to team leaders in the return order workflow.",
+                    "tags": [
+                        "PHP"
+                    ]
+                },
+                {
+                    "title": "Customer Purchase Order Enhancement",
+                    "description": "Enhanced PO processing with an interactive IRBM validation modal displaying multi-table joined data.",
+                    "tags": [
+                        "PHP"
+                    ]
+                },
+                {
+                    "title": "Email-to-Agency Inventory Matching Module",
+                    "description": "Improved matching logic with an agency-first display structure and a searchable, sortable interface.",
+                    "tags": [
+                        "PHP"
+                    ]
+                },
+                {
+                    "title": "Galileo SFA – Web Tablet Application",
+                    "description": "Developed a Sales Force Automation system with customer visit planning, inventory checks, and dynamic pricing.",
+                    "tags": [
+                        "Laravel"
+                    ]
+                },
+                {
+                    "title": "B2B SKU Maintenance Module Enhancement",
+                    "description": "Enhanced SKU management with barcode support and data export functionality.",
+                    "tags": [
+                        "Laravel"
+                    ]
+                },
+                {
+                    "title": "B2B LHM Customer PO Processing",
+                    "description": "Automated a purchase-order workflow with multi-format support, UOM conversions, and data validation.",
+                    "tags": [
+                        "PHP"
+                    ]
+                },
+                {
+                    "title": "Automated Daily VM Backup",
+                    "description": "Automated an Ubuntu VM backup routine using Windows batch scripts with compression and cleanup.",
+                    "tags": [
+                        "Windows Batch",
+                        "VirtualBox"
+                    ]
+                },
+                {
+                    "title": "Customer Data Update Logic Enhancement",
+                    "description": "Improved update logic with staged processing and audit trails to maintain data integrity.",
+                    "tags": [
+                        "Laravel"
+                    ]
+                },
+                {
+                    "title": "B2B LHS Purchase Order Processing",
+                    "description": "Added multi-retailer PO format support with file uploads, data transformation, and maintenance pages.",
+                    "tags": [
+                        "PHP"
+                    ]
+                },
+                {
+                    "title": "Daily CN Return Management Module",
+                    "description": "Built a centralized module for CN return records with filtering, pagination, and bulk export capabilities.",
+                    "tags": [
+                        "PHP"
+                    ]
+                }
             ]
         }
     ]

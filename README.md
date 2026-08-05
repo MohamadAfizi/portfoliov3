@@ -51,7 +51,8 @@ Edit `src/data/content.json` in VS Code or Notepad. The homepage reads this file
 - `github`: GitHub username, profile URL, graph title, and graph wording.
 - `profile_summary`: introduction paragraph.
 - `tech_stack`: skill tags.
-- `projects`, `milestones`, `industry_experiences`: card arrays.
+- `projects` and `milestones`: card arrays.
+- `industry_experiences`: role-based timeline entries with text highlights.
 
 Each card has an `actions` array. External actions remain disabled until an HTTP(S) URL is added:
 
@@ -84,7 +85,28 @@ For a non-Git project, use a local Markdown action:
 }
 ```
 
-Modal sources must stay inside `src/content/readmes/` and use the `.md` extension. Projects use `readme` and `view` actions, learning paths use `profile`, and certifications or completed courses use `certificate`. Industry Experience actions are intentionally deferred.
+Modal sources must stay inside `src/content/readmes/` and use the `.md` extension. Projects use `readme` and `view` actions, learning paths use `profile`, and certifications or completed courses use `certificate`.
+
+Industry Experience uses a separate text-only timeline structure:
+
+```json
+{
+  "period": "Dec 2024 — Present",
+  "role": "Application Analyst & Developer",
+  "company": "",
+  "current": true,
+  "scope": "A privacy-safe summary of the role.",
+  "highlights": [
+    {
+      "title": "Workflow enhancement",
+      "description": "Outcome-focused summary.",
+      "tags": ["PHP"]
+    }
+  ]
+}
+```
+
+Timeline roles and their highlights follow their JSON order. Put the newest role first. The timeline intentionally has no card actions, subcategory controls, or pagination.
 
 Keep JSON commas and quotes valid. A quick validation command is:
 

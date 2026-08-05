@@ -63,6 +63,8 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
     const navLinks = document.querySelectorAll('.nav-links a');
     const cards = document.querySelectorAll('.cards-grid .card');
+    const cardsWrapper = document.querySelector('.cards-wrapper');
+    const industryTimeline = document.getElementById('industryTimeline');
     let categoriesData = {};
 
     function setActiveNavLink(linkElement) {
@@ -230,6 +232,93 @@ document.addEventListener('DOMContentLoaded', function() {
       if (typeof pagesState[category] === 'undefined') pagesState[category] = 0;
     }
 
+    function renderIndustryTimeline(experiences) {
+      if (!industryTimeline) return;
+      industryTimeline.innerHTML = '';
+
+      experiences.forEach(experience => {
+        const role = document.createElement('article');
+        role.className = 'timeline-role';
+        if (experience.current === true) role.classList.add('is-current');
+
+        const period = document.createElement('p');
+        period.className = 'timeline-period';
+        period.textContent = experience.period || '';
+        role.appendChild(period);
+
+        const heading = document.createElement('h3');
+        heading.className = 'timeline-role-title';
+        heading.textContent = experience.role || '';
+        role.appendChild(heading);
+
+        if (experience.company) {
+          const company = document.createElement('p');
+          company.className = 'timeline-company';
+          company.textContent = experience.company;
+          role.appendChild(company);
+        }
+
+        if (experience.scope) {
+          const scope = document.createElement('p');
+          scope.className = 'timeline-scope';
+          const scopeLabel = document.createElement('span');
+          scopeLabel.textContent = 'scope: ';
+          scope.appendChild(scopeLabel);
+          scope.appendChild(document.createTextNode(experience.scope));
+          role.appendChild(scope);
+        }
+
+        const highlights = Array.isArray(experience.highlights) ? experience.highlights : [];
+        if (highlights.length > 0) {
+          const highlightList = document.createElement('ol');
+          highlightList.className = 'timeline-highlights';
+
+          highlights.forEach((highlight, index) => {
+            const item = document.createElement('li');
+            item.className = 'timeline-highlight';
+
+            const itemNumber = document.createElement('span');
+            itemNumber.className = 'timeline-highlight-number';
+            itemNumber.textContent = String(index + 1).padStart(2, '0');
+            itemNumber.setAttribute('aria-hidden', 'true');
+            item.appendChild(itemNumber);
+
+            const itemContent = document.createElement('div');
+            itemContent.className = 'timeline-highlight-content';
+
+            const itemTitle = document.createElement('h4');
+            itemTitle.textContent = highlight.title || '';
+            itemContent.appendChild(itemTitle);
+
+            if (highlight.description) {
+              const itemDescription = document.createElement('p');
+              itemDescription.textContent = highlight.description;
+              itemContent.appendChild(itemDescription);
+            }
+
+            const tags = Array.isArray(highlight.tags) ? highlight.tags : [];
+            if (tags.length > 0) {
+              const tagLine = document.createElement('p');
+              tagLine.className = 'timeline-tags';
+              tags.forEach(tag => {
+                const tagElement = document.createElement('span');
+                tagElement.textContent = `#${String(tag).toLowerCase().replace(/\s+/g, '-')}`;
+                tagLine.appendChild(tagElement);
+              });
+              itemContent.appendChild(tagLine);
+            }
+
+            item.appendChild(itemContent);
+            highlightList.appendChild(item);
+          });
+
+          role.appendChild(highlightList);
+        }
+
+        industryTimeline.appendChild(role);
+      });
+    }
+
     function updateCategoryPresentation(category) {
       const descElement = document.getElementById('categoryDescription');
       if (descElement) {
@@ -243,6 +332,24 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function animateCards(category) {
+      if (category === 'industry_experiences') {
+        if (cardsWrapper) cardsWrapper.hidden = true;
+        if (industryTimeline) {
+          industryTimeline.hidden = false;
+          renderIndustryTimeline(categoriesData[category] || []);
+          industryTimeline.classList.remove('animate');
+          void industryTimeline.offsetWidth;
+          industryTimeline.classList.add('animate');
+        }
+        return;
+      }
+
+      if (cardsWrapper) cardsWrapper.hidden = false;
+      if (industryTimeline) {
+        industryTimeline.hidden = true;
+        industryTimeline.classList.remove('animate');
+      }
+
       cards.forEach((card, index) => {
         setTimeout(() => { card.classList.remove('animate'); card.classList.add('exit'); }, index * 80);
       });

@@ -42,6 +42,8 @@ $pageData = [
   </div>
 </div>
 
+<div id="industryTimeline" class="industry-timeline" hidden></div>
+
 <script id="portfolio-data" type="application/json"><?= encode_json_for_html($pageData) ?></script>
     </div>
   </section>

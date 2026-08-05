@@ -314,18 +314,20 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
-// Analytics Charts with Custom Plugins
+// Visitor Analytics & GitHub Contributions
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
   const analyticsSliderTitle = document.getElementById('analyticsSliderTitle');
   const chartCanvas = document.getElementById('visitorAnalyticsChart');
-  if (!chartCanvas || typeof Chart === 'undefined') return;
+  const githubGraph = document.getElementById('githubContributionGraph');
+  if (!chartCanvas || !githubGraph) return;
 
   const analyticsData = portfolioData.analytics || {};
   const visitorData = analyticsData.visitors || { labels: [], values: [] };
-  const projectData = analyticsData.projects || { labels: [], values: [] };
+  const githubConfig = portfolioData.github || {};
   let analyticsChart = null;
   let currentSlideIndex = 0;
+  let githubRequest = null;
 
   const dataLabelPlugin = {
     id: 'dataLabelPlugin',
@@ -391,181 +393,247 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
-  const doughnutCalloutPlugin = {
-    id: 'doughnutCalloutPlugin',
-    afterDatasetsDraw(chart) {
-      if (chart.config.type !== 'doughnut') return;
-      const meta = chart.getDatasetMeta(0);
-      const dataset = chart.data.datasets && chart.data.datasets[0];
-      if (!meta || !meta.data || !dataset || !dataset.data) return;
-
-      const ctx = chart.ctx;
-      ctx.save();
-      ctx.font = '12px Arial';
-      ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
-      ctx.lineWidth = 1;
-
-      meta.data.forEach((arc, i) => {
-        const value = dataset.data[i];
-        if (value === null || value === undefined) return;
-        const label = (chart.data.labels && chart.data.labels[i]) ? chart.data.labels[i] : `Item ${i + 1}`;
-
-        const angle = (arc.startAngle + arc.endAngle) / 2;
-        const sx = arc.x + Math.cos(angle) * arc.outerRadius;
-        const sy = arc.y + Math.sin(angle) * arc.outerRadius;
-        const ex = arc.x + Math.cos(angle) * (arc.outerRadius + 18);
-        const ey = arc.y + Math.sin(angle) * (arc.outerRadius + 18);
-        const isRight = Math.cos(angle) >= 0;
-        const text = `${label}: ${value}`;
-        const textWidth = ctx.measureText(text).width;
-        const canvasWidth = chart.canvas ? chart.canvas.width : 0;
-        const canvasHeight = chart.canvas ? chart.canvas.height : 0;
-        const edgePad = 6;
-        let tx = ex + (isRight ? 12 : -12);
-        let ty = ey;
-
-        if (isRight) {
-          tx = Math.min(tx, canvasWidth - textWidth - edgePad);
-        } else {
-          tx = Math.max(tx, textWidth + edgePad);
-        }
-        ty = Math.max(10, Math.min(ty, canvasHeight - 10));
-
-        ctx.beginPath();
-        ctx.moveTo(sx, sy);
-        ctx.lineTo(ex, ey);
-        ctx.stroke();
-
-        ctx.textAlign = isRight ? 'left' : 'right';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(text, tx, ty);
-      });
-
-      ctx.restore();
-    }
-  };
-
-  const chartSlides = [
-    {
-      title: uiText.visitor_analytics_title || '',
-      config: {
-        type: 'line',
-        data: {
-          labels: visitorData.labels || [],
-          datasets: [{
-            label: uiText.total_visits_label || '',
-            data: visitorData.values || [],
-            borderColor: '#6defF8',
-            backgroundColor: 'rgba(109, 239, 248, 0.1)',
-            fill: true,
-            tension: 0.4,
-            pointBackgroundColor: '#6defF8',
-            pointBorderColor: '#000',
-            pointHoverBackgroundColor: '#fff',
-            pointHoverBorderColor: '#6defF8'
-          }]
-        },
-        options: {
-          plugins: {
-            dataLabelPlugin: { enabled: true, position: 'top', color: '#ffffff', font: '12px Arial' },
-            legend: { display: false }
-          }
-        }
-      }
+  const visitorChartConfig = {
+    type: 'line',
+    data: {
+      labels: visitorData.labels || [],
+      datasets: [{
+        label: uiText.total_visits_label || '',
+        data: visitorData.values || [],
+        borderColor: '#6defF8',
+        backgroundColor: 'rgba(109, 239, 248, 0.1)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#6defF8',
+        pointBorderColor: '#000',
+        pointHoverBackgroundColor: '#fff',
+        pointHoverBorderColor: '#6defF8'
+      }]
     },
-    {
-      title: uiText.project_analytics_title || '',
-      config: {
-        type: 'doughnut',
-        data: {
-          labels: projectData.labels || [],
-          datasets: [{
-            data: projectData.values || [],
-            backgroundColor: [
-              'rgba(109, 239, 248, 1)',
-              'rgba(109, 239, 248, 0.9)',
-              'rgba(109, 239, 248, 0.8)',
-              'rgba(109, 239, 248, 0.7)',
-              'rgba(109, 239, 248, 0.5)',
-              'rgba(109, 239, 248, 0.4)',
-              'rgba(109, 239, 248, 0.3)',
-              'rgba(109, 239, 248, 0.2)'
-            ],
-            borderColor: '#000',
-            borderWidth: 2,
-            offset: [15, 13, 11, 9, 7, 5, 5, 3],
-            spacing: 3,
-            borderRadius: 4
-          }]
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      layout: { padding: { top: 18, bottom: 6 } },
+      scales: {
+        y: {
+          beginAtZero: true,
+          grid: { color: 'rgba(255, 255, 255, 0.05)' },
+          ticks: { color: '#888', precision: 0, stepSize: 1, grace: '25%' }
         },
-        options: {
-          plugins: {
-            dataLabelPlugin: { enabled: false },
-            legend: { display: false },
-            tooltip: {
-              enabled: false,
-              backgroundColor: 'rgba(0,0,0,0.95)',
-              titleColor: '#fff',
-              bodyColor: '#6defF8',
-              borderColor: '#6defF8',
-              borderWidth: 2
-            }
-          },
-          cutout: '60%',
-          layout: { padding: { top: 25, bottom: 25, left: 25, right: 25 } }
-        }
-      }
-    }
-  ];
-
-  const baseOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    layout: { padding: { top: 18, bottom: 6 } },
-    scales: {
-      y: {
-        beginAtZero: true,
-        grid: { color: 'rgba(255, 255, 255, 0.05)' },
-        ticks: { color: '#888', precision: 0, stepSize: 1, grace: '25%' }
+        x: { grid: { display: false }, ticks: { color: '#888' } }
       },
-      x: { grid: { display: false }, ticks: { color: '#888' } }
-    },
-    plugins: {
-      dataLabelPlugin: { enabled: true, position: 'top', color: '#ffffff', font: '12px Arial' },
-      legend: { display: false },
-      tooltip: {
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        titleColor: '#fff',
-        bodyColor: '#fff',
-        borderColor: '#333',
-        borderWidth: 1,
-        displayColors: false
+      plugins: {
+        dataLabelPlugin: { enabled: true, position: 'top', color: '#ffffff', font: '12px Arial' },
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(0,0,0,0.8)',
+          titleColor: '#fff',
+          bodyColor: '#fff',
+          borderColor: '#333',
+          borderWidth: 1,
+          displayColors: false
+        }
       }
     }
   };
 
-  function renderChartSlide(index) {
-    const slide = chartSlides[index];
-    const isDoughnut = slide.config.type === 'doughnut';
-    const mergedOptions = Object.assign({}, baseOptions, slide.config.options || {});
-    if (isDoughnut) {
-      delete mergedOptions.scales;
+  function showGithubFallback() {
+    githubGraph.innerHTML = '';
+
+    const status = document.createElement('p');
+    status.className = 'github-status github-status-error';
+    status.textContent = githubConfig.unavailable_text || '';
+    githubGraph.appendChild(status);
+
+    if (githubConfig.profile_url) {
+      const link = document.createElement('a');
+      link.className = 'github-profile-link';
+      link.href = githubConfig.profile_url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = githubConfig.view_profile_label || githubConfig.profile_url;
+      githubGraph.appendChild(link);
     }
-    if (analyticsSliderTitle) analyticsSliderTitle.textContent = slide.title;
-    if (analyticsChart) analyticsChart.destroy();
-    analyticsChart = new Chart(chartCanvas, {
-      type: slide.config.type,
-      data: slide.config.data,
-      plugins: isDoughnut ? [doughnutCalloutPlugin] : [dataLabelPlugin],
-      options: mergedOptions
-    });
   }
 
-  renderChartSlide(currentSlideIndex);
+  function contributionText(day) {
+    const count = Number(day.count) || 0;
+    const noun = count === 1
+      ? (githubConfig.contribution_singular || 'contribution')
+      : (githubConfig.contribution_plural || 'contributions');
+    const date = new Date(`${day.date}T00:00:00Z`).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC'
+    });
+    return `${count} ${noun} ${githubConfig.on_label || 'on'} ${date}`;
+  }
+
+  function renderGithubCalendar(data) {
+    const weeks = Array.isArray(data.weeks) ? data.weeks : [];
+    if (weeks.length === 0) {
+      showGithubFallback();
+      return;
+    }
+
+    githubGraph.innerHTML = '';
+
+    const summary = document.createElement('div');
+    summary.className = 'github-summary';
+
+    const total = document.createElement('span');
+    total.className = 'github-total';
+    total.textContent = `${Number(data.totalContributions) || 0} ${githubConfig.subtitle || ''}`.trim();
+    summary.appendChild(total);
+
+    const profileLink = document.createElement('a');
+    profileLink.className = 'github-profile-link';
+    profileLink.href = data.profileUrl || githubConfig.profile_url || '#';
+    profileLink.target = '_blank';
+    profileLink.rel = 'noopener noreferrer';
+    profileLink.textContent = githubConfig.view_profile_label || data.username || '';
+    summary.appendChild(profileLink);
+    githubGraph.appendChild(summary);
+
+    const scroller = document.createElement('div');
+    scroller.className = 'github-calendar-scroll';
+
+    const calendar = document.createElement('div');
+    calendar.className = 'github-calendar';
+
+    const months = document.createElement('div');
+    months.className = 'github-months';
+    months.style.gridTemplateColumns = `repeat(${weeks.length}, var(--github-cell-size))`;
+
+    let previousMonth = '';
+    weeks.forEach((week, weekIndex) => {
+      const firstDay = Array.isArray(week.days) ? week.days[0] : null;
+      if (!firstDay || !firstDay.date) return;
+      const date = new Date(`${firstDay.date}T00:00:00Z`);
+      const monthKey = `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
+      if (monthKey === previousMonth || date.getUTCDate() > 7) return;
+
+      const label = document.createElement('span');
+      label.textContent = date.toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' });
+      label.style.gridColumn = `${weekIndex + 1} / span 4`;
+      months.appendChild(label);
+      previousMonth = monthKey;
+    });
+    calendar.appendChild(months);
+
+    const weekGrid = document.createElement('div');
+    weekGrid.className = 'github-weeks';
+
+    weeks.forEach(week => {
+      const weekColumn = document.createElement('div');
+      weekColumn.className = 'github-week';
+
+      (Array.isArray(week.days) ? week.days : []).forEach(day => {
+        const cell = document.createElement('span');
+        const level = String(day.level || 'NONE').toLowerCase().replaceAll('_', '-');
+        const label = contributionText(day);
+        cell.className = 'github-day';
+        cell.dataset.level = level;
+        cell.title = label;
+        cell.setAttribute('role', 'img');
+        cell.setAttribute('aria-label', label);
+        weekColumn.appendChild(cell);
+      });
+
+      weekGrid.appendChild(weekColumn);
+    });
+
+    calendar.appendChild(weekGrid);
+    scroller.appendChild(calendar);
+    githubGraph.appendChild(scroller);
+
+    const legend = document.createElement('div');
+    legend.className = 'github-legend';
+
+    const less = document.createElement('span');
+    less.textContent = githubConfig.less_label || '';
+    legend.appendChild(less);
+
+    ['none', 'first-quartile', 'second-quartile', 'third-quartile', 'fourth-quartile'].forEach(level => {
+      const cell = document.createElement('span');
+      cell.className = 'github-day';
+      cell.dataset.level = level;
+      cell.setAttribute('aria-hidden', 'true');
+      legend.appendChild(cell);
+    });
+
+    const more = document.createElement('span');
+    more.textContent = githubConfig.more_label || '';
+    legend.appendChild(more);
+    githubGraph.appendChild(legend);
+  }
+
+  function loadGithubContributions() {
+    if (githubRequest) return githubRequest;
+
+    githubGraph.innerHTML = '';
+    const loading = document.createElement('p');
+    loading.className = 'github-status';
+    loading.textContent = githubConfig.loading_text || '';
+    githubGraph.appendChild(loading);
+
+    githubRequest = fetch('api/github-contributions.php', {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+      credentials: 'same-origin'
+    })
+      .then(response => {
+        if (!response.ok) throw new Error(`GitHub endpoint returned ${response.status}`);
+        return response.json();
+      })
+      .then(result => {
+        if (!result || result.ok !== true || !result.data) throw new Error('GitHub data was unavailable');
+        renderGithubCalendar(result.data);
+      })
+      .catch(() => {
+        showGithubFallback();
+      });
+
+    return githubRequest;
+  }
+
+  function renderVisitorAnalytics() {
+    githubGraph.hidden = true;
+    chartCanvas.hidden = false;
+    if (analyticsSliderTitle) analyticsSliderTitle.textContent = uiText.visitor_analytics_title || '';
+    if (analyticsChart) analyticsChart.destroy();
+    if (typeof Chart !== 'undefined') {
+      analyticsChart = new Chart(chartCanvas, {
+        ...visitorChartConfig,
+        plugins: [dataLabelPlugin]
+      });
+    }
+  }
+
+  function renderGithubContributions() {
+    chartCanvas.hidden = true;
+    githubGraph.hidden = false;
+    if (analyticsSliderTitle) analyticsSliderTitle.textContent = githubConfig.title || '';
+    if (analyticsChart) {
+      analyticsChart.destroy();
+      analyticsChart = null;
+    }
+    loadGithubContributions();
+  }
+
+  function renderAnalyticsSlide(index) {
+    if (index === 1) {
+      renderGithubContributions();
+    } else {
+      renderVisitorAnalytics();
+    }
+  }
+
+  renderAnalyticsSlide(currentSlideIndex);
 
   setInterval(function() {
-    currentSlideIndex = (currentSlideIndex + 1) % chartSlides.length;
-    renderChartSlide(currentSlideIndex);
+    currentSlideIndex = (currentSlideIndex + 1) % 2;
+    renderAnalyticsSlide(currentSlideIndex);
   }, 10000);
 });

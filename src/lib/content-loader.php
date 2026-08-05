@@ -18,6 +18,7 @@ function load_content(): array
         ? $content['navigation']
         : [];
     $content['ui'] = isset($content['ui']) && is_array($content['ui']) ? $content['ui'] : [];
+    $content['github'] = isset($content['github']) && is_array($content['github']) ? $content['github'] : [];
 
     return $content;
 }
@@ -40,31 +41,5 @@ function category_from_content(array $content, string $key, string $fallbackLabe
         'description' => (string) ($navigation['description'] ?? ''),
         'groups' => $groups,
         'items' => is_array($items) ? array_values($items) : [],
-    ];
-}
-
-function project_technology_analytics(array $projects, int $limit = 8): array
-{
-    $counts = [];
-
-    foreach ($projects as $project) {
-        if (!is_array($project)) {
-            continue;
-        }
-
-        foreach (($project['techStack'] ?? []) as $technology) {
-            $technology = trim((string) $technology);
-            if ($technology !== '') {
-                $counts[$technology] = ($counts[$technology] ?? 0) + 1;
-            }
-        }
-    }
-
-    arsort($counts);
-    $counts = array_slice($counts, 0, $limit, true);
-
-    return [
-        'labels' => array_keys($counts),
-        'values' => array_values($counts),
     ];
 }

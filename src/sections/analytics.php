@@ -2,5 +2,10 @@
   <h3 class="analytics-title">
     <span id="analyticsSliderTitle"><?= e($content['ui']['visitor_analytics_title'] ?? '') ?></span>
   </h3>
-  <canvas id="visitorAnalyticsChart"></canvas>
+  <div class="analytics-stage">
+    <canvas id="visitorAnalyticsChart"></canvas>
+    <div id="githubContributionGraph" class="github-contributions" hidden aria-live="polite">
+      <p class="github-status"><?= e($content['github']['loading_text'] ?? '') ?></p>
+    </div>
+  </div>
 </div>

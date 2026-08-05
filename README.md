@@ -11,6 +11,7 @@ portfoliov3/
 └── src/                          # web root
     ├── index.php                 # page composer; includes modules only
     ├── api/
+    │   ├── github-contributions.php # server-side GitHub GraphQL endpoint
     │   └── track-visitor.php     # asynchronous visitor append endpoint
     ├── assets/
     │   ├── styles.css            # the one global stylesheet
@@ -45,6 +46,7 @@ Edit `src/data/content.json` in VS Code or Notepad. The homepage reads this file
 - `site`: page title, name, role, location, email, favicon, and footer.
 - `navigation`: category labels and descriptions.
 - `ui`: chart, card-action, and pagination labels.
+- `github`: GitHub username, profile URL, graph title, and graph wording.
 - `profile_summary`: introduction paragraph.
 - `tech_stack`: skill tags.
 - `projects`, `milestones`, `industry_experiences`: card arrays.
@@ -59,7 +61,29 @@ Get-Content -Raw src/data/content.json | ConvertFrom-Json | Out-Null
 
 After the page loads, `app.js` asynchronously calls `api/track-visitor.php`. The endpoint creates `src/data/visitors.json` when needed and adds one entry using a file lock, without delaying the visible page. Public IP addresses are anonymized before storage. For public IPs, PHP requests location data from `https://ipapi.co/{ip}/json/`; failures do not stop the page. Previous location results are reused for the same anonymized IP range.
 
-The visitor chart is calculated from this JSON file. The project chart is calculated from the project `techStack` values in `content.json`.
+The visitor chart is calculated from this JSON file. Its existing data and presentation are independent from the GitHub contribution slide.
+
+## GitHub contributions
+
+Visitor Analytics alternates every 10 seconds with the account-wide GitHub contribution calendar for `MohamadAfizi`. The browser calls `api/github-contributions.php`, which queries GitHub's official GraphQL API and caches the sanitized response in the visitor's native PHP session for 15 minutes. No extra project data file is created.
+
+The endpoint requires a GitHub token in the server environment. Never put the token in PHP, JavaScript, `content.json`, or Git.
+
+In PowerShell, configure the token and start PHP from the same terminal:
+
+```powershell
+$env:GITHUB_TOKEN = "your-token"
+php -S localhost:8000 -t src
+```
+
+For Docker, set the variable in the terminal before starting the container:
+
+```powershell
+$env:GITHUB_TOKEN = "your-token"
+docker compose up -d
+```
+
+If the token expires or GitHub is unavailable, the GitHub slide shows a profile link while Visitor Analytics and the rest of the site continue normally.
 
 The visitor log is ignored by Git so real analytics and personal data are never committed. The web-server user must have write permission for `src/data/`. Apache uses `src/data/.htaccess` to deny direct downloads. If deploying behind Nginx or another server, add an equivalent rule blocking `/data/visitors.json`.
 

@@ -6,11 +6,11 @@ $initialDescription = $initialCategory !== null
 
 $pageData = [
     'ui' => $content['ui'],
+    'github' => $content['github'],
     'techStack' => array_values($content['tech_stack']),
     'categories' => $portfolioCategories,
     'analytics' => [
         'visitors' => $visitorAnalytics,
-        'projects' => $projectAnalytics,
     ],
 ];
 ?>

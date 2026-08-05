@@ -5,7 +5,6 @@ require_once __DIR__ . '/lib/bootstrap.php';
 
 $content = load_content();
 $visitorAnalytics = visitor_analytics();
-$projectAnalytics = project_technology_analytics($content['projects']);
 $portfolioCategories = [];
 $site = $content['site'];
 ?><!DOCTYPE html>

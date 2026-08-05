@@ -25,11 +25,24 @@
     },
     "ui": {
         "visitor_analytics_title": "Visitor Analytics",
-        "project_analytics_title": "Project Analytics",
         "total_visits_label": "Total Visits",
         "details_label": "Details",
         "demo_label": "Demo",
         "page_label": "Page"
+    },
+    "github": {
+        "username": "MohamadAfizi",
+        "profile_url": "https://github.com/MohamadAfizi",
+        "title": "GitHub Contributions",
+        "subtitle": "Contributions in the last year",
+        "loading_text": "Loading GitHub contributions…",
+        "unavailable_text": "GitHub contribution data is temporarily unavailable.",
+        "view_profile_label": "View profile on GitHub",
+        "less_label": "Less",
+        "more_label": "More",
+        "contribution_singular": "contribution",
+        "contribution_plural": "contributions",
+        "on_label": "on"
     },
     "profile_summary": "A Full Stack Developer based in Kuala Lumpur with hands-on experience in building web applications, internal systems, and data-driven tools. Proficient in PHP, Laravel, JavaScript, and SQL — with a passion for clean code, practical solutions, and continuous learning across both frontend and backend disciplines.",
     "tech_stack": [

@@ -640,7 +640,7 @@ section {
 
 .category-description {
   margin-top: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 12px;
   padding: 0;
   background: transparent;
   border: none;
@@ -662,7 +662,7 @@ section {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 15px;
+  margin-top: 0;
   margin-bottom: 0px;
   opacity: 1;
   transition: opacity 0.5s ease;

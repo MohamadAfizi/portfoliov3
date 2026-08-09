@@ -5,8 +5,10 @@ require_once __DIR__ . '/lib/bootstrap.php';
 
 $contentPath = __DIR__ . '/data/content.json';
 $backupPath = __DIR__ . '/data/content.backup.json';
+$logsPath = __DIR__ . '/data/logs.json';
 $allowedSections = ['site', 'tech_stack', 'projects', 'milestones', 'industry_experiences'];
 $currentContent = load_content();
+$currentLogs = read_json_file($logsPath);
 
 function editor_string_length(string $value): int
 {
@@ -123,13 +125,120 @@ function validate_editor_section(array $content, string $section, array $allowed
     return $errors;
 }
 
+function editor_section_snapshot(array $content, string $section): mixed
+{
+    return match ($section) {
+        'site' => [
+            'site' => editor_array($content['site'] ?? null),
+            'navigation' => editor_array($content['navigation'] ?? null),
+            'ui' => editor_array($content['ui'] ?? null),
+            'profile_summary' => (string) ($content['profile_summary'] ?? ''),
+        ],
+        'tech_stack', 'projects', 'milestones' => editor_array($content[$section] ?? null),
+        'industry_experiences' => editor_array($content['industry_experiences'] ?? null),
+        default => null,
+    };
+}
+
+function editor_snapshot_count(mixed $snapshot, string $section): int
+{
+    if (!is_array($snapshot)) {
+        return 0;
+    }
+    if (in_array($section, ['tech_stack', 'projects', 'milestones'], true)) {
+        return count($snapshot);
+    }
+    if ($section === 'industry_experiences') {
+        return count(editor_array($snapshot['keyAchievements'] ?? null))
+            + count(editor_array($snapshot['roles'] ?? null));
+    }
+    return 0;
+}
+
+function editor_log_action(mixed $before, mixed $after, string $section, bool $success): string
+{
+    if (!$success) {
+        return 'save_failed';
+    }
+    if ($before === $after) {
+        return 'no_change';
+    }
+
+    $beforeCount = editor_snapshot_count($before, $section);
+    $afterCount = editor_snapshot_count($after, $section);
+    if ($afterCount > $beforeCount) {
+        return 'create';
+    }
+    if ($afterCount < $beforeCount) {
+        return 'delete';
+    }
+    return 'update_or_reorder';
+}
+
+function editor_log_subject(mixed $before, mixed $after, string $section): string
+{
+    if (!in_array($section, ['projects', 'milestones'], true)) {
+        return '';
+    }
+
+    $beforeItems = is_array($before) ? $before : [];
+    $afterItems = is_array($after) ? $after : [];
+    $candidate = count($afterItems) > count($beforeItems) ? ($afterItems[0] ?? null) : ($beforeItems[0] ?? null);
+    return is_array($candidate) ? (string) ($candidate['title'] ?? '') : '';
+}
+
+function append_editor_log(string $path, array $entry): bool
+{
+    $handle = @fopen($path, 'c+');
+    if ($handle === false) {
+        return false;
+    }
+
+    try {
+        if (!flock($handle, LOCK_EX)) {
+            return false;
+        }
+
+        rewind($handle);
+        $raw = stream_get_contents($handle);
+        $logs = [];
+        if (is_string($raw) && trim($raw) !== '') {
+            try {
+                $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
+                $logs = is_array($decoded) ? $decoded : [];
+            } catch (JsonException) {
+                return false;
+            }
+        }
+
+        $logs[] = $entry;
+        $encoded = json_encode(
+            $logs,
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
+        ) . PHP_EOL;
+
+        rewind($handle);
+        if (!ftruncate($handle, 0) || fwrite($handle, $encoded) === false || !fflush($handle)) {
+            return false;
+        }
+        return true;
+    } catch (Throwable) {
+        return false;
+    } finally {
+        flock($handle, LOCK_UN);
+        fclose($handle);
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     header('Content-Type: application/json; charset=UTF-8');
     $errors = [];
     $payload = null;
+    $nextContent = $currentContent;
+    $rawRequest = (string) file_get_contents('php://input');
 
     try {
-        $payload = json_decode((string) file_get_contents('php://input'), true, 512, JSON_THROW_ON_ERROR);
+        $payload = json_decode($rawRequest, true, 512, JSON_THROW_ON_ERROR);
     } catch (JsonException) {
         $errors[] = 'Request body must be valid JSON.';
     }
@@ -143,6 +252,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $nextContent = normalize_editor_payload($payload, $currentContent, $section);
         $errors = validate_editor_section($nextContent, $section, $allowedSections);
     }
+
+    $beforeSnapshot = editor_section_snapshot($currentContent, $section);
+    $afterSnapshot = in_array($section, $allowedSections, true)
+        ? editor_section_snapshot($nextContent, $section)
+        : ['raw_request' => $rawRequest];
 
     if (!$errors) {
         try {
@@ -164,17 +278,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    try {
+        $logId = bin2hex(random_bytes(8));
+    } catch (Throwable) {
+        $logId = uniqid('log_', true);
+    }
+
+    $logEntry = [
+        'id' => $logId,
+        'timestamp' => date(DATE_ATOM),
+        'status' => $errors ? 'failed' : 'success',
+        'section' => $section !== '' ? $section : 'unknown',
+        'action' => editor_log_action($beforeSnapshot, $afterSnapshot, $section, !$errors),
+        'record' => editor_log_subject($beforeSnapshot, $afterSnapshot, $section),
+        'errors' => $errors,
+        'before' => $beforeSnapshot,
+        'after' => $afterSnapshot,
+    ];
+    $logStored = append_editor_log($logsPath, $logEntry);
+    if (!$logStored) {
+        error_log('Content editor log fallback: ' . json_encode($logEntry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+
     http_response_code($errors ? 422 : 200);
     echo json_encode([
         'ok' => !$errors,
         'errors' => $errors,
         'savedAt' => $errors ? null : date(DATE_ATOM),
+        'log' => $logEntry,
+        'logStored' => $logStored,
     ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
     exit;
 }
 
 $content = $currentContent;
 $editorData = encode_json_for_html($content);
+$editorLogs = encode_json_for_html($currentLogs);
+$logCount = count($currentLogs);
 $projectCount = count(editor_array($content['projects'] ?? null));
 $milestoneCount = count(editor_array($content['milestones'] ?? null));
 $techCount = count(editor_array($content['tech_stack'] ?? null));
@@ -203,11 +343,10 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
   </div>
 
   <nav class="jump-nav" aria-label="Editor sections">
-    <a href="#site">Site</a>
-    <a href="#tech-stack">Tech <span id="navTechCount"><?= $techCount ?></span></a>
-    <a href="#projects">Projects <span id="navProjectsCount"><?= $projectCount ?></span></a>
-    <a href="#milestones">Milestones <span id="navMilestonesCount"><?= $milestoneCount ?></span></a>
-    <a href="#experience">Experience <span id="navExperienceCount"><?= $achievementCount + $roleCount ?></span></a>
+    <a class="jump-tech" href="#tech-stack">Tech <span id="navTechCount"><?= $techCount ?></span></a>
+    <a class="jump-projects" href="#projects">Projects <span id="navProjectsCount"><?= $projectCount ?></span></a>
+    <a class="jump-milestones" href="#milestones">Milestones <span id="navMilestonesCount"><?= $milestoneCount ?></span></a>
+    <a class="jump-experience" href="#experience">Experience <span id="navExperienceCount"><?= $achievementCount + $roleCount ?></span></a>
   </nav>
 
   <div class="save-overview">
@@ -224,7 +363,7 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
     <header class="section-heading">
       <div class="section-identity">
         <span class="section-number">01</span>
-        <div><h2>Site &amp; Profile</h2><p>Identity, terminal copy, navigation, and interface labels</p></div>
+        <div><h2>Site &amp; Profile</h2><p>Identity, search details, profile copy, and public navigation</p></div>
       </div>
       <div class="section-actions">
         <span class="section-status" data-status="site">No unsaved changes</span>
@@ -235,25 +374,15 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
       <div class="settings-panel">
         <div class="panel-heading"><h3>Public identity</h3><span>Browser and profile details</span></div>
         <div class="field-grid field-grid-4">
-          <div class="field"><label for="siteLanguage">Language</label><input id="siteLanguage" data-section="site" data-path="site.language" value="<?= e($content['site']['language'] ?? '') ?>"></div>
           <div class="field field-span-2"><label for="siteTitle">Browser title</label><input id="siteTitle" data-section="site" data-path="site.title" value="<?= e($content['site']['title'] ?? '') ?>"></div>
           <div class="field"><label for="siteName">Display name</label><input id="siteName" data-section="site" data-path="site.name" value="<?= e($content['site']['name'] ?? '') ?>"></div>
           <div class="field"><label for="siteRole">Role</label><input id="siteRole" data-section="site" data-path="site.role" value="<?= e($content['site']['role'] ?? '') ?>"></div>
           <div class="field"><label for="siteLocation">Location</label><input id="siteLocation" data-section="site" data-path="site.location" value="<?= e($content['site']['location'] ?? '') ?>"></div>
           <div class="field"><label for="siteEmail">Email</label><input id="siteEmail" type="email" data-section="site" data-path="site.email" value="<?= e($content['site']['email'] ?? '') ?>"></div>
           <div class="field"><label for="siteFavicon">Favicon path</label><input id="siteFavicon" data-section="site" data-path="site.favicon" value="<?= e($content['site']['favicon'] ?? '') ?>"></div>
-          <div class="field field-span-2"><label for="siteDescription">Meta description</label><textarea id="siteDescription" class="textarea-small" data-section="site" data-path="site.description"><?= e($content['site']['description'] ?? '') ?></textarea></div>
+          <div class="field field-span-2"><label for="siteDescription">Search description</label><textarea id="siteDescription" class="textarea-small" data-section="site" data-path="site.description"><?= e($content['site']['description'] ?? '') ?></textarea></div>
           <div class="field field-span-2"><label for="siteFooter">Footer</label><textarea id="siteFooter" class="textarea-small" data-section="site" data-path="site.footer"><?= e($content['site']['footer'] ?? '') ?></textarea></div>
           <div class="field field-span-all"><label for="profileSummary">Profile summary</label><textarea id="profileSummary" class="textarea-feature" data-section="site" data-path="profile_summary"><?= e($content['profile_summary'] ?? '') ?></textarea></div>
-        </div>
-      </div>
-
-      <div class="settings-panel">
-        <div class="panel-heading"><h3>Terminal presentation</h3><span>Hero command-line copy</span></div>
-        <div class="field-grid field-grid-3">
-          <div class="field"><label for="terminalPrompt">Terminal prompt</label><input id="terminalPrompt" data-section="site" data-path="site.terminal_prompt" value="<?= e($content['site']['terminal_prompt'] ?? '') ?>"></div>
-          <div class="field"><label for="heroCommand">Hero command</label><input id="heroCommand" data-section="site" data-path="site.hero_command" value="<?= e($content['site']['hero_command'] ?? '') ?>"></div>
-          <div class="field"><label for="summaryCommand">Summary command</label><input id="summaryCommand" data-section="site" data-path="site.summary_command" value="<?= e($content['site']['summary_command'] ?? '') ?>"></div>
         </div>
       </div>
 
@@ -270,14 +399,6 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
         </div>
       </div>
 
-      <div class="settings-panel">
-        <div class="panel-heading"><h3>Interface labels</h3><span>Analytics and pagination copy</span></div>
-        <div class="field-grid field-grid-3">
-          <div class="field"><label for="analyticsTitle">Analytics title</label><input id="analyticsTitle" data-section="site" data-path="ui.visitor_analytics_title" value="<?= e($content['ui']['visitor_analytics_title'] ?? '') ?>"></div>
-          <div class="field"><label for="totalVisitsLabel">Total visits label</label><input id="totalVisitsLabel" data-section="site" data-path="ui.total_visits_label" value="<?= e($content['ui']['total_visits_label'] ?? '') ?>"></div>
-          <div class="field"><label for="pageLabel">Page label</label><input id="pageLabel" data-section="site" data-path="ui.page_label" value="<?= e($content['ui']['page_label'] ?? '') ?>"></div>
-        </div>
-      </div>
     </div>
   </section>
 
@@ -337,21 +458,56 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
         <button class="button button-primary" type="button" data-save-section="industry_experiences" disabled>Save Industry Experience</button>
       </div>
     </header>
-    <div class="section-content settings-stack">
-      <div class="settings-panel">
+    <div class="section-content">
+      <div class="group-tabs industry-tabs" role="tablist" aria-label="Industry experience sections">
+        <button class="group-tab is-active" type="button" role="tab" aria-selected="true" aria-controls="achievementsPanel" data-experience-tab="achievements" data-tone="0">
+          <span>Key Achievements</span><strong id="achievementTabCount"><?= $achievementCount ?></strong>
+        </button>
+        <button class="group-tab" type="button" role="tab" aria-selected="false" aria-controls="rolesPanel" data-experience-tab="roles" data-tone="3">
+          <span>Career Roles</span><strong id="roleTabCount"><?= $roleCount ?></strong>
+        </button>
+      </div>
+      <div class="settings-panel experience-panel" id="achievementsPanel" data-experience-panel="achievements" role="tabpanel">
         <div class="panel-heading panel-heading-actions">
           <div><h3>Key achievements</h3><span><span id="achievementsCount"><?= $achievementCount ?></span> measurable career outcomes</span></div>
           <button class="button" type="button" id="addAchievementButton">+ Add achievement</button>
         </div>
         <div class="record-grid" id="achievementsList"></div>
       </div>
-      <div class="settings-panel">
+      <div class="settings-panel experience-panel" id="rolesPanel" data-experience-panel="roles" role="tabpanel" hidden>
         <div class="panel-heading panel-heading-actions">
-          <div><h3>Career roles</h3><span><span id="rolesCount"><?= $roleCount ?></span> timeline records and nested positions</span></div>
+          <div><h3>Career roles</h3><span><span id="rolesCount"><?= $roleCount ?></span> timeline records</span></div>
           <button class="button" type="button" id="addRoleButton">+ Add role</button>
         </div>
         <div class="record-grid role-grid" id="rolesList"></div>
       </div>
+    </div>
+  </section>
+
+  <section class="editor-section" id="change-logs">
+    <header class="section-heading">
+      <div class="section-identity">
+        <span class="section-number">06</span>
+        <div><h2>Change Logs</h2><p><span id="logsCount"><?= $logCount ?></span> successful and failed save attempts</p></div>
+      </div>
+      <div class="section-actions">
+        <span class="log-file-label">src/data/logs.json</span>
+      </div>
+    </header>
+    <div class="section-content log-table-wrap">
+      <table class="log-table">
+        <thead>
+          <tr>
+            <th scope="col">Time</th>
+            <th scope="col">Status</th>
+            <th scope="col">Section</th>
+            <th scope="col">Action</th>
+            <th scope="col">Record</th>
+            <th scope="col">Raw change</th>
+          </tr>
+        </thead>
+        <tbody id="logsTableBody"></tbody>
+      </table>
     </div>
   </section>
 </main>
@@ -377,7 +533,10 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
 
 <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
 
-<script>window.CONTENT_EDITOR_DATA = <?= $editorData ?>;</script>
+<script>
+window.CONTENT_EDITOR_DATA = <?= $editorData ?>;
+window.CONTENT_EDITOR_LOGS = <?= $editorLogs ?>;
+</script>
 <script src="assets/content-editor.js"></script>
 </body>
 </html>

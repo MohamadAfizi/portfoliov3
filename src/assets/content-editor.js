@@ -3,7 +3,9 @@
 
   const clone = (value) => JSON.parse(JSON.stringify(value));
   const state = clone(window.CONTENT_EDITOR_DATA || {});
+  const logs = clone(Array.isArray(window.CONTENT_EDITOR_LOGS) ? window.CONTENT_EDITOR_LOGS : []);
   const dirtySections = new Set();
+  const alphabeticalSort = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
   const sectionLabels = {
     site: 'Site & Profile',
     tech_stack: 'Tech Stack',
@@ -12,13 +14,15 @@
     industry_experiences: 'Industry Experience',
   };
   let activeDialogSection = '';
+  const activePortfolioGroup = { projects: '', milestones: '' };
+  let activeExperienceTab = 'achievements';
   let controlId = 0;
   let lastSavedMessage = '';
 
   state.site = objectValue(state.site);
   state.navigation = objectValue(state.navigation);
   state.ui = objectValue(state.ui);
-  state.tech_stack = arrayValue(state.tech_stack);
+  state.tech_stack = cleanTags(state.tech_stack);
   state.projects = arrayValue(state.projects);
   state.milestones = arrayValue(state.milestones);
   state.industry_experiences = objectValue(state.industry_experiences);
@@ -89,6 +93,49 @@
     return createElement('button', { type: 'button', className, text, title });
   }
 
+  function makeIcon(name) {
+    const paths = {
+      up: 'M6 14l6-6 6 6',
+      down: 'M6 10l6 6 6-6',
+      delete: 'M5 7h14M9 7V4h6v3m2 0-1 13H8L7 7m3 4v5m4-5v5',
+    };
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('aria-hidden', 'true');
+    svg.setAttribute('focusable', 'false');
+    path.setAttribute('d', paths[name]);
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke', 'currentColor');
+    path.setAttribute('stroke-width', '1.8');
+    path.setAttribute('stroke-linecap', 'round');
+    path.setAttribute('stroke-linejoin', 'round');
+    svg.append(path);
+    return svg;
+  }
+
+  function toneFor(value) {
+    const source = String(value || 'record');
+    let hash = 0;
+    for (let index = 0; index < source.length; index += 1) hash = ((hash << 5) - hash) + source.charCodeAt(index);
+    return String(Math.abs(hash) % 6);
+  }
+
+  function makeGroupTab(label, count, tone, isActive, onClick) {
+    const button = createElement('button', {
+      type: 'button',
+      className: `group-tab${isActive ? ' is-active' : ''}`,
+      dataset: { tone },
+    }, [
+      createElement('span', { text: label }),
+      createElement('strong', { text: count }),
+    ]);
+    button.setAttribute('role', 'tab');
+    button.setAttribute('aria-selected', String(isActive));
+    button.addEventListener('click', onClick);
+    return button;
+  }
+
   function emptyState(message) {
     return createElement('div', { className: 'empty-state', text: message });
   }
@@ -114,10 +161,7 @@
     if (section === 'milestones') return arrayValue(state.milestones).length;
     if (section === 'industry_experiences') {
       const industry = objectValue(state.industry_experiences);
-      const roles = arrayValue(industry.roles);
-      return arrayValue(industry.keyAchievements).length
-        + roles.length
-        + roles.reduce((total, role) => total + arrayValue(role?.positions).length, 0);
+      return arrayValue(industry.keyAchievements).length + arrayValue(industry.roles).length;
     }
     return 0;
   }
@@ -132,6 +176,8 @@
     setText('experienceCount', achievements + roles);
     setText('achievementsCount', achievements);
     setText('rolesCount', roles);
+    setText('achievementTabCount', achievements);
+    setText('roleTabCount', roles);
     setText('navTechCount', state.tech_stack.length);
     setText('navProjectsCount', state.projects.length);
     setText('navMilestonesCount', state.milestones.length);
@@ -199,9 +245,11 @@
     const cleaned = [];
     arrayValue(tags).forEach((tag) => {
       const value = String(tag ?? '').trim();
-      if (value && !cleaned.includes(value)) cleaned.push(value);
+      if (value && !cleaned.some((existing) => alphabeticalSort.compare(existing, value) === 0)) {
+        cleaned.push(value);
+      }
     });
-    return cleaned;
+    return cleaned.sort((first, second) => alphabeticalSort.compare(first, second));
   }
 
   function prepareSection(section) {
@@ -242,6 +290,13 @@
         body: JSON.stringify({ ...state, section }),
       });
       const result = await response.json();
+      if (result.log) {
+        logs.push(result.log);
+        renderLogs();
+      }
+      if (result.logStored === false) {
+        showToast('The attempt was written to the PHP fallback log.', true);
+      }
       if (!response.ok || !result.ok) {
         throw new Error(arrayValue(result.errors).join(' ') || 'Save failed.');
       }
@@ -288,8 +343,8 @@
     renderPortfolioSection(section);
   }
 
-  function recordShell(index, title, controls) {
-    const card = createElement('article', { className: 'record-card' });
+  function recordShell(index, title, controls, toneSeed = '') {
+    const card = createElement('article', { className: 'record-card', dataset: { tone: toneFor(toneSeed || index) } });
     const heading = createElement('div', { className: 'record-heading' }, [
       createElement('span', { className: 'record-index', text: String(index + 1).padStart(2, '0') }),
       createElement('p', { className: 'record-title', text: title || 'Untitled record' }),
@@ -304,9 +359,14 @@
   }
 
   function createReorderControls(canMoveUp, canMoveDown, onUp, onDown, onDelete) {
-    const up = makeButton('up', 'icon-button', 'Move up');
-    const down = makeButton('dn', 'icon-button', 'Move down');
-    const remove = makeButton('x', 'icon-button button-danger', 'Delete record');
+    const up = makeButton('', 'icon-button', 'Move up');
+    const down = makeButton('', 'icon-button', 'Move down');
+    const remove = makeButton('Delete', 'button button-danger delete-button', 'Delete record');
+    up.setAttribute('aria-label', 'Move up');
+    down.setAttribute('aria-label', 'Move down');
+    up.append(makeIcon('up'));
+    down.append(makeIcon('down'));
+    remove.prepend(makeIcon('delete'));
     up.disabled = !canMoveUp;
     down.disabled = !canMoveDown;
     up.addEventListener('click', onUp);
@@ -441,7 +501,7 @@
         renderPortfolioSection(section);
       }
     );
-    const shell = recordShell(index, item.title, controls);
+    const shell = recordShell(index, item.title, controls, item.group);
     const title = makeInput(item.title ?? '', `${singular} title`, (value) => {
       item.title = value;
       shell.titlePreview.textContent = value || 'Untitled record';
@@ -451,7 +511,10 @@
       item.group = value;
       markDirty(section);
     });
-    group.addEventListener('change', () => renderPortfolioSection(section));
+    group.addEventListener('change', () => {
+      activePortfolioGroup[section] = group.value.trim() || 'Ungrouped';
+      renderPortfolioSection(section);
+    });
     const description = makeTextarea(item.description ?? '', 'record-description', (value) => {
       item.description = value;
       if (counter) counter.textContent = `${value.length}/150`;
@@ -494,18 +557,34 @@
       groups.get(group).push(index);
     });
 
-    groups.forEach((indexes, group) => {
-      const grid = createElement('div', { className: 'record-grid' });
-      indexes.forEach((index) => grid.append(createPortfolioCard(section, items[index], index, indexes)));
-      const heading = createElement('header', { className: 'group-heading' }, [
-        createElement('div', {}, [
-          createElement('h3', { text: group }),
-          createElement('p', { text: `${indexes.length} ${indexes.length === 1 ? 'record' : 'records'}` }),
-        ]),
-        createElement('code', { text: section === 'projects' ? 'PROJECT GROUP' : 'MILESTONE GROUP' }),
-      ]);
-      container.append(createElement('section', { className: 'group-block' }, [heading, grid]));
+    const groupNames = [...groups.keys()];
+    if (!groups.has(activePortfolioGroup[section])) activePortfolioGroup[section] = groupNames[0];
+
+    const tabs = createElement('div', {
+      className: 'group-tabs',
     });
+    tabs.setAttribute('role', 'tablist');
+    tabs.setAttribute('aria-label', section === 'projects' ? 'Project groups' : 'Milestone groups');
+    groupNames.forEach((group) => {
+      const isActive = group === activePortfolioGroup[section];
+      tabs.append(makeGroupTab(group, groups.get(group).length, toneFor(group), isActive, () => {
+        activePortfolioGroup[section] = group;
+        renderPortfolioSection(section);
+      }));
+    });
+
+    const activeGroup = activePortfolioGroup[section];
+    const activeIndexes = groups.get(activeGroup);
+    const grid = createElement('div', { className: 'record-grid' });
+    activeIndexes.forEach((index) => grid.append(createPortfolioCard(section, items[index], index, activeIndexes)));
+    const heading = createElement('header', { className: 'group-heading' }, [
+      createElement('div', {}, [
+        createElement('h3', { text: activeGroup }),
+        createElement('p', { text: `${activeIndexes.length} ${activeIndexes.length === 1 ? 'record' : 'records'}` }),
+      ]),
+      createElement('code', { text: section === 'projects' ? 'PROJECT GROUP' : 'MILESTONE GROUP' }),
+    ]);
+    container.append(tabs, createElement('section', { className: 'group-block' }, [heading, grid]));
   }
 
   function renderTechStack() {
@@ -520,6 +599,10 @@
       const input = makeInput(tag, 'Technology', (value) => {
         state.tech_stack[index] = value;
         markDirty('tech_stack');
+      });
+      input.addEventListener('change', () => {
+        state.tech_stack = cleanTags(state.tech_stack);
+        renderTechStack();
       });
       const remove = makeButton('x', 'icon-button button-danger', 'Remove technology');
       remove.addEventListener('click', () => {
@@ -556,7 +639,7 @@
           renderAchievements();
         }
       );
-      const shell = recordShell(index, item.title, controls);
+      const shell = recordShell(index, item.title, controls, `achievement-${index}`);
       const title = makeInput(item.title ?? '', 'Achievement title', (value) => {
         item.title = value;
         shell.titlePreview.textContent = value || 'Untitled achievement';
@@ -571,65 +654,58 @@
     });
   }
 
-  function createPositionsEditor(role) {
-    const panel = createElement('div', { className: 'record-subpanel' });
-    const list = createElement('div', { className: 'position-list' });
-    const add = makeButton('+ Add position', 'button button-quiet');
-    const heading = createElement('div', { className: 'subpanel-heading' }, [
-      createElement('strong', { text: 'Nested positions' }),
-      add,
-    ]);
+  function renderLogs() {
+    const tableBody = document.getElementById('logsTableBody');
+    if (!tableBody) return;
+    tableBody.replaceChildren();
+    setText('logsCount', logs.length);
 
-    function render() {
-      list.replaceChildren();
-      const positions = arrayValue(role.positions);
-      if (!positions.length) {
-        list.append(emptyState('No nested positions for this role.'));
-        return;
-      }
-      positions.forEach((positionValue, index) => {
-        const position = objectValue(positionValue);
-        positions[index] = position;
-        const roleName = makeInput(position.role ?? '', 'Position', (value) => {
-          position.role = value;
-          markDirty('industry_experiences');
-        });
-        const from = makeInput(position.from ?? '', 'From', (value) => {
-          position.from = value;
-          markDirty('industry_experiences');
-        });
-        const to = makeInput(position.to ?? '', 'To', (value) => {
-          position.to = value;
-          markDirty('industry_experiences');
-        });
-        const remove = makeButton('x', 'icon-button button-danger', 'Remove nested position');
-        remove.addEventListener('click', () => {
-          if (!confirmRemoval(`position "${position.role || index + 1}"`)) return;
-          positions.splice(index, 1);
-          markDirty('industry_experiences');
-          render();
-          updateCounts();
-        });
-        list.append(createElement('div', { className: 'position-row' }, [
-          makeField('Position', roleName),
-          makeField('From', from),
-          makeField('To', to),
-          remove,
-        ]));
-      });
+    if (!logs.length) {
+      const cell = createElement('td', { colSpan: 6 });
+      cell.append(emptyState('No save attempts have been logged yet.'));
+      tableBody.append(createElement('tr', {}, [cell]));
+      return;
     }
 
-    add.addEventListener('click', () => {
-      if (!Array.isArray(role.positions)) role.positions = [];
-      role.positions.unshift({ role: '', from: '', to: '' });
-      markDirty('industry_experiences');
-      render();
-      updateCounts();
-      list.querySelector('input')?.focus();
+    [...logs].reverse().forEach((logValue) => {
+      const log = objectValue(logValue);
+      const timestamp = new Date(log.timestamp || '');
+      const time = Number.isNaN(timestamp.getTime())
+        ? String(log.timestamp || '-')
+        : timestamp.toLocaleString([], { dateStyle: 'medium', timeStyle: 'medium' });
+      const status = String(log.status || 'unknown');
+      const section = sectionLabels[log.section] || String(log.section || 'Unknown').replaceAll('_', ' ');
+      const raw = {
+        errors: arrayValue(log.errors),
+        before: log.before ?? null,
+        after: log.after ?? null,
+      };
+      const details = createElement('details', { className: 'raw-log' }, [
+        createElement('summary', { text: 'View JSON' }),
+        createElement('pre', { text: JSON.stringify(raw, null, 2) }),
+      ]);
+      tableBody.append(createElement('tr', {}, [
+        createElement('td', { text: time }),
+        createElement('td', {}, [createElement('span', { className: `log-status is-${status}`, text: status })]),
+        createElement('td', { text: section }),
+        createElement('td', {}, [createElement('code', { text: String(log.action || 'save') })]),
+        createElement('td', { text: String(log.record || '-') }),
+        createElement('td', {}, [details]),
+      ]));
     });
-    panel.append(heading, list);
-    render();
-    return panel;
+  }
+
+  function setExperienceTab(tab) {
+    activeExperienceTab = tab;
+    document.querySelectorAll('[data-experience-tab]').forEach((button) => {
+      const isActive = button.dataset.experienceTab === tab;
+      button.classList.toggle('is-active', isActive);
+      button.setAttribute('aria-selected', String(isActive));
+      button.tabIndex = isActive ? 0 : -1;
+    });
+    document.querySelectorAll('[data-experience-panel]').forEach((panel) => {
+      panel.hidden = panel.dataset.experiencePanel !== tab;
+    });
   }
 
   function renderRoles() {
@@ -657,7 +733,7 @@
           renderRoles();
         }
       );
-      const shell = recordShell(index, item.role, controls);
+      const shell = recordShell(index, item.role, controls, `role-${index}`);
       const role = makeInput(item.role ?? '', 'Role title', (value) => {
         item.role = value;
         shell.titlePreview.textContent = value || 'Untitled role';
@@ -690,8 +766,7 @@
           current,
           createElement('span', { text: 'Mark as current role' }),
         ]),
-        makeField('Scope and responsibilities', scope),
-        createPositionsEditor(item)
+        makeField('Scope and responsibilities', scope)
       );
       container.append(shell.card);
     });
@@ -784,6 +859,7 @@
       actions: [],
     });
     const section = activeDialogSection;
+    activePortfolioGroup[section] = group;
     markDirty(section);
     renderPortfolioSection(section);
     closeAddDialog();
@@ -794,6 +870,7 @@
   });
 
   document.getElementById('addAchievementButton').addEventListener('click', () => {
+    setExperienceTab('achievements');
     state.industry_experiences.keyAchievements.unshift({ title: '', summary: '' });
     markDirty('industry_experiences');
     renderAchievements();
@@ -801,6 +878,7 @@
   });
 
   document.getElementById('addRoleButton').addEventListener('click', () => {
+    setExperienceTab('roles');
     state.industry_experiences.roles.unshift({ from: '', to: '', role: '', scope: '', current: false });
     markDirty('industry_experiences');
     renderRoles();
@@ -813,10 +891,16 @@
     event.returnValue = '';
   });
 
+  document.querySelectorAll('[data-experience-tab]').forEach((button) => {
+    button.addEventListener('click', () => setExperienceTab(button.dataset.experienceTab));
+  });
+
   renderTechStack();
   renderPortfolioSection('projects');
   renderPortfolioSection('milestones');
   renderAchievements();
   renderRoles();
+  setExperienceTab(activeExperienceTab);
+  renderLogs();
   updateOverview();
 })();

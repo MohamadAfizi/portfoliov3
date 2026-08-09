@@ -495,7 +495,7 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
 <body>
 <header class="command-bar">
   <div class="brand-lockup">
-    <img class="brand-avatar" src="../../shared/media/images/dp.png" alt="" aria-hidden="true">
+    <img class="brand-avatar" src="media/images/dp.png" alt="" aria-hidden="true">
     <div>
       <h1>Portvolio v3 Content Editor</h1>
     </div>

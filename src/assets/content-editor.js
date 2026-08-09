@@ -20,9 +20,11 @@
     milestones: 'Milestones',
     industry_experiences: 'Industry Experience',
   };
+  const logsPerPage = 20;
   let activeDialogSection = '';
   const activePortfolioGroup = { projects: '', milestones: '' };
   let activeExperienceTab = 'achievements';
+  let currentLogsPage = 1;
   let controlId = 0;
   let lastSavedMessage = '';
 
@@ -288,7 +290,7 @@
   async function saveSection(section, button) {
     const operations = [...(pendingOperations[section] || [])];
     const operationText = operations.length ? operations.join(', ') : 'edit';
-    if (!window.confirm(`Confirm ${sectionLabels[section]} save?\n\nPending operations: ${operationText}`)) {
+    if (!await confirmDialog(`Confirm ${sectionLabels[section]} save?`, `Pending operations: ${operationText}`, 'Save')) {
       return;
     }
 
@@ -334,11 +336,27 @@
   }
 
   function confirmRemoval(label) {
-    return window.confirm(`Delete ${label}? This change is permanent after you save the section.`);
+    return confirmDialog(`Delete ${label}?`, 'This change is permanent after you save the section.', 'Delete', true);
   }
 
   function confirmAddition(label) {
-    return window.confirm(`Add ${label}? You will still need to save the section.`);
+    return confirmDialog(`Add ${label}?`, 'You will still need to save the section.', 'Add');
+  }
+
+  async function confirmDialog(title, text, confirmButtonText, isDanger = false) {
+    if (!window.Swal) {
+      return window.confirm(`${title}\n\n${text}`);
+    }
+    const result = await window.Swal.fire({
+      title,
+      text,
+      icon: isDanger ? 'warning' : 'question',
+      showCancelButton: true,
+      confirmButtonText,
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: isDanger ? '#b33a33' : '#305f8f',
+    });
+    return Boolean(result.isConfirmed);
   }
 
   function swapItems(items, firstIndex, secondIndex) {
@@ -415,9 +433,9 @@
           values[index] = value;
           markDirty(section);
         });
-        input.addEventListener('change', () => {
+        input.addEventListener('change', async () => {
           if (input.value.trim() !== '' || String(tag).trim() === '') return;
-          if (!confirmRemoval(`technology "${tag}"`)) {
+          if (!await confirmRemoval(`technology "${tag}"`)) {
             values[index] = tag;
             input.value = tag;
             return;
@@ -427,8 +445,8 @@
           render();
         });
         const remove = makeButton('x', 'icon-button button-danger', 'Remove technology');
-        remove.addEventListener('click', () => {
-          if (!confirmRemoval(`technology "${tag || index + 1}"`)) return;
+        remove.addEventListener('click', async () => {
+          if (!await confirmRemoval(`technology "${tag || index + 1}"`)) return;
           values.splice(index, 1);
           markDirty(section, 'delete');
           render();
@@ -437,8 +455,8 @@
       });
     }
 
-    add.addEventListener('click', () => {
-      if (!confirmAddition('a technology to this record')) return;
+    add.addEventListener('click', async () => {
+      if (!await confirmAddition('a technology to this record')) return;
       if (!Array.isArray(item.techStack)) item.techStack = [];
       item.techStack.unshift('');
       markDirty(section, 'add');
@@ -489,8 +507,8 @@
           markDirty(section);
         });
         const remove = makeButton('x', 'icon-button button-danger', 'Remove action');
-        remove.addEventListener('click', () => {
-          if (!confirmRemoval(`action "${action.label || index + 1}"`)) return;
+        remove.addEventListener('click', async () => {
+          if (!await confirmRemoval(`action "${action.label || index + 1}"`)) return;
           actions.splice(index, 1);
           markDirty(section, 'delete');
           render();
@@ -505,8 +523,8 @@
       });
     }
 
-    add.addEventListener('click', () => {
-      if (!confirmAddition('a new action')) return;
+    add.addEventListener('click', async () => {
+      if (!await confirmAddition('a new action')) return;
       if (!Array.isArray(item.actions)) item.actions = [];
       item.actions.unshift({ label: '', type: 'external', url: '' });
       markDirty(section, 'add');
@@ -527,8 +545,8 @@
       groupPosition < groupIndexes.length - 1,
       () => moveGroupedItem(items, index, groupIndexes, -1, section),
       () => moveGroupedItem(items, index, groupIndexes, 1, section),
-      () => {
-        if (!confirmRemoval(`${singular} "${item.title || `#${index + 1}`}"`)) return;
+      async () => {
+        if (!await confirmRemoval(`${singular} "${item.title || `#${index + 1}`}"`)) return;
         items.splice(index, 1);
         markDirty(section, 'delete');
         renderPortfolioSection(section);
@@ -633,24 +651,24 @@
         state.tech_stack[index] = value;
         markDirty('tech_stack');
       });
-      input.addEventListener('change', () => {
-        if (input.value.trim() === '' && String(tag).trim() !== '') {
-          if (!confirmRemoval(`technology "${tag}"`)) {
-            state.tech_stack[index] = tag;
-            input.value = tag;
-            return;
-          }
-          state.tech_stack.splice(index, 1);
-          markDirty('tech_stack', 'delete');
-          renderTechStack();
+        input.addEventListener('change', async () => {
+          if (input.value.trim() === '' && String(tag).trim() !== '') {
+            if (!await confirmRemoval(`technology "${tag}"`)) {
+              state.tech_stack[index] = tag;
+              input.value = tag;
+              return;
+            }
+            state.tech_stack.splice(index, 1);
+            markDirty('tech_stack', 'delete');
+            renderTechStack();
           return;
         }
         state.tech_stack = cleanTags(state.tech_stack);
         renderTechStack();
       });
       const remove = makeButton('x', 'icon-button button-danger', 'Remove technology');
-      remove.addEventListener('click', () => {
-        if (!confirmRemoval(`technology "${tag || index + 1}"`)) return;
+      remove.addEventListener('click', async () => {
+        if (!await confirmRemoval(`technology "${tag || index + 1}"`)) return;
         state.tech_stack.splice(index, 1);
         markDirty('tech_stack', 'delete');
         renderTechStack();
@@ -677,8 +695,8 @@
         index < items.length - 1,
         () => moveItem(items, index, -1, 'industry_experiences', renderAchievements),
         () => moveItem(items, index, 1, 'industry_experiences', renderAchievements),
-        () => {
-          if (!confirmRemoval(`achievement "${item.title || `#${index + 1}`}"`)) return;
+        async () => {
+          if (!await confirmRemoval(`achievement "${item.title || `#${index + 1}`}"`)) return;
           items.splice(index, 1);
           markDirty('industry_experiences', 'delete');
           renderAchievements();
@@ -720,15 +738,19 @@
     if (!tableBody) return;
     tableBody.replaceChildren();
     setText('logsCount', logs.length);
+    const totalPages = Math.max(1, Math.ceil(logs.length / logsPerPage));
+    currentLogsPage = Math.min(Math.max(1, currentLogsPage), totalPages);
+    const pageLogs = [...logs].reverse().slice((currentLogsPage - 1) * logsPerPage, currentLogsPage * logsPerPage);
 
     if (!logs.length) {
       const cell = createElement('td', { colSpan: 4 });
       cell.append(emptyState('No save attempts have been logged yet.'));
       tableBody.append(createElement('tr', {}, [cell]));
+      updateLogsPagination(1, 1);
       return;
     }
 
-    [...logs].reverse().forEach((logValue) => {
+    pageLogs.forEach((logValue) => {
       const log = objectValue(logValue);
       const timestamp = new Date(log.timestamp || '');
       const time = Number.isNaN(timestamp.getTime())
@@ -745,6 +767,22 @@
         createElement('td', {}, [createElement('pre', { className: 'log-value', text: value })]),
       ]));
     });
+    updateLogsPagination(currentLogsPage, totalPages);
+  }
+
+  function updateLogsPagination(page, totalPages) {
+    const label = document.getElementById('logsPageLabel');
+    const prevButton = document.getElementById('logsPrevButton');
+    const nextButton = document.getElementById('logsNextButton');
+    if (label) label.textContent = `Page ${page} of ${totalPages}`;
+    if (prevButton) prevButton.disabled = page <= 1;
+    if (nextButton) nextButton.disabled = page >= totalPages;
+  }
+
+  function goToLogsPage(page) {
+    const totalPages = Math.max(1, Math.ceil(logs.length / logsPerPage));
+    currentLogsPage = Math.min(Math.max(1, page), totalPages);
+    renderLogs();
   }
 
   function setExperienceTab(tab) {
@@ -778,8 +816,8 @@
         index < items.length - 1,
         () => moveItem(items, index, -1, 'industry_experiences', renderRoles),
         () => moveItem(items, index, 1, 'industry_experiences', renderRoles),
-        () => {
-          if (!confirmRemoval(`role "${item.role || `#${index + 1}`}"`)) return;
+        async () => {
+          if (!await confirmRemoval(`role "${item.role || `#${index + 1}`}"`)) return;
           items.splice(index, 1);
           markDirty('industry_experiences', 'delete');
           renderRoles();
@@ -875,8 +913,8 @@
     button.addEventListener('click', () => saveSection(button.dataset.saveSection, button));
   });
 
-  document.getElementById('addTechButton').addEventListener('click', () => {
-    if (!confirmAddition('a new technology')) return;
+  document.getElementById('addTechButton').addEventListener('click', async () => {
+    if (!await confirmAddition('a new technology')) return;
     state.tech_stack.unshift('');
     markDirty('tech_stack', 'add');
     renderTechStack();
@@ -893,7 +931,7 @@
   document.getElementById('addEntryDialog').addEventListener('click', (event) => {
     if (event.target === event.currentTarget) closeAddDialog();
   });
-  document.getElementById('addEntryForm').addEventListener('submit', (event) => {
+  document.getElementById('addEntryForm').addEventListener('submit', async (event) => {
     event.preventDefault();
     if (!activeDialogSection) return;
     const select = document.getElementById('entryGroupSelect');
@@ -905,7 +943,7 @@
       return;
     }
     const singular = activeDialogSection === 'projects' ? 'project' : 'milestone';
-    if (!confirmAddition(`this ${singular} in "${group}"`)) return;
+    if (!await confirmAddition(`this ${singular} in "${group}"`)) return;
     state[activeDialogSection].unshift({
       title: '',
       group,
@@ -924,8 +962,8 @@
     });
   });
 
-  document.getElementById('addAchievementButton').addEventListener('click', () => {
-    if (!confirmAddition('a new achievement')) return;
+  document.getElementById('addAchievementButton').addEventListener('click', async () => {
+    if (!await confirmAddition('a new achievement')) return;
     setExperienceTab('achievements');
     state.industry_experiences.keyAchievements.unshift({ title: '', summary: '' });
     markDirty('industry_experiences', 'add');
@@ -933,8 +971,8 @@
     document.querySelector('#achievementsList input')?.focus();
   });
 
-  document.getElementById('addRoleButton').addEventListener('click', () => {
-    if (!confirmAddition('a new career role')) return;
+  document.getElementById('addRoleButton').addEventListener('click', async () => {
+    if (!await confirmAddition('a new career role')) return;
     setExperienceTab('roles');
     state.industry_experiences.roles.unshift({ from: '', to: '', role: '', scope: '', current: false });
     markDirty('industry_experiences', 'add');
@@ -951,6 +989,9 @@
   document.querySelectorAll('[data-experience-tab]').forEach((button) => {
     button.addEventListener('click', () => setExperienceTab(button.dataset.experienceTab));
   });
+
+  document.getElementById('logsPrevButton')?.addEventListener('click', () => goToLogsPage(currentLogsPage - 1));
+  document.getElementById('logsNextButton')?.addEventListener('click', () => goToLogsPage(currentLogsPage + 1));
 
   renderTechStack();
   renderPortfolioSection('projects');

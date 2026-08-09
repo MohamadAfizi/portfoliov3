@@ -485,19 +485,19 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Portfolio Content Editor</title>
+<title>Portvolio v3 Content Editor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link rel="stylesheet" href="assets/content-editor.css">
 </head>
 <body>
 <header class="command-bar">
   <div class="brand-lockup">
-    <span class="brand-mark" aria-hidden="true">CE</span>
+    <img class="brand-avatar" src="../../shared/media/images/dp.png" alt="" aria-hidden="true">
     <div>
-      <h1>Content Editor</h1>
-      <p>Portfolio control surface</p>
+      <h1>Portvolio v3 Content Editor</h1>
     </div>
   </div>
 
@@ -658,13 +658,18 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
         <thead>
           <tr>
             <th scope="col">Time</th>
-            <th scope="col">Status</th>
-            <th scope="col">Section</th>
+            <th scope="col" class="log-col-status">Status</th>
+            <th scope="col" class="log-col-section">Section</th>
             <th scope="col">Value</th>
           </tr>
         </thead>
         <tbody id="logsTableBody"></tbody>
       </table>
+      <div class="log-pagination" aria-label="Log pagination">
+        <button class="button button-quiet" type="button" id="logsPrevButton">Previous</button>
+        <span id="logsPageLabel">Page 1 of 1</span>
+        <button class="button button-quiet" type="button" id="logsNextButton">Next</button>
+      </div>
     </div>
   </section>
 </main>

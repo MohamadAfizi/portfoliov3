@@ -94,22 +94,16 @@ button:disabled {
   min-width: 188px;
 }
 
-.brand-mark {
+.brand-avatar {
   display: grid;
   width: 34px;
   height: 34px;
-  place-items: center;
+  object-fit: cover;
   border-radius: 7px;
-  color: #fff;
   background: var(--graphite);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: -0.04em;
 }
 
 .brand-lockup h1,
-.brand-lockup p,
 .section-heading h2,
 .section-heading p,
 .panel-heading h3,
@@ -123,8 +117,12 @@ button:disabled {
 }
 
 .brand-lockup h1 {
-  font-size: 14px;
+  font-size: 16px;
   line-height: 1.2;
+}
+
+.brand-lockup p {
+  margin: 0;
 }
 
 .brand-lockup p,
@@ -903,10 +901,11 @@ select:focus {
 }
 
 .log-table th:nth-child(1) { width: 165px; }
-.log-table th:nth-child(2) { width: 78px; }
-.log-table th:nth-child(3) { width: 145px; }
-.log-table th:nth-child(4) { width: 135px; }
-.log-table th:nth-child(5) { width: 180px; }
+.log-table th:nth-child(2),
+.log-col-status { width: 88px; }
+.log-table th:nth-child(3),
+.log-col-section { width: 134px; }
+.log-table th:nth-child(4) { width: auto; }
 
 .log-table code {
   color: var(--ink);
@@ -948,6 +947,17 @@ select:focus {
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+.log-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 12px;
+  color: var(--ink-soft);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
 }
 
 .group-dialog {

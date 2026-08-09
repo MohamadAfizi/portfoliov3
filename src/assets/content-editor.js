@@ -5,6 +5,13 @@
   const state = clone(window.CONTENT_EDITOR_DATA || {});
   const logs = clone(Array.isArray(window.CONTENT_EDITOR_LOGS) ? window.CONTENT_EDITOR_LOGS : []);
   const dirtySections = new Set();
+  const pendingOperations = {
+    site: new Set(),
+    tech_stack: new Set(),
+    projects: new Set(),
+    milestones: new Set(),
+    industry_experiences: new Set(),
+  };
   const alphabeticalSort = new Intl.Collator(undefined, { sensitivity: 'base', numeric: true });
   const sectionLabels = {
     site: 'Site & Profile',
@@ -197,8 +204,9 @@
     }
   }
 
-  function markDirty(section) {
+  function markDirty(section, operation = 'edit') {
     dirtySections.add(section);
+    pendingOperations[section]?.add(operation);
     const card = document.querySelector(`[data-section-card="${section}"]`);
     const status = document.querySelector(`[data-status="${section}"]`);
     const saveButton = document.querySelector(`[data-save-section="${section}"]`);
@@ -213,6 +221,7 @@
 
   function markClean(section, message) {
     dirtySections.delete(section);
+    pendingOperations[section]?.clear();
     const card = document.querySelector(`[data-section-card="${section}"]`);
     const status = document.querySelector(`[data-status="${section}"]`);
     const saveButton = document.querySelector(`[data-save-section="${section}"]`);
@@ -277,6 +286,12 @@
   }
 
   async function saveSection(section, button) {
+    const operations = [...(pendingOperations[section] || [])];
+    const operationText = operations.length ? operations.join(', ') : 'edit';
+    if (!window.confirm(`Confirm ${sectionLabels[section]} save?\n\nPending operations: ${operationText}`)) {
+      return;
+    }
+
     prepareSection(section);
     const previousMetric = savedMetrics[section];
     const originalText = button.textContent;
@@ -287,7 +302,7 @@
       const response = await fetch(window.location.pathname, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ ...state, section }),
+        body: JSON.stringify({ ...state, section, operations }),
       });
       const result = await response.json();
       if (result.log) {
@@ -322,6 +337,10 @@
     return window.confirm(`Delete ${label}? This change is permanent after you save the section.`);
   }
 
+  function confirmAddition(label) {
+    return window.confirm(`Add ${label}? You will still need to save the section.`);
+  }
+
   function swapItems(items, firstIndex, secondIndex) {
     [items[firstIndex], items[secondIndex]] = [items[secondIndex], items[firstIndex]];
   }
@@ -330,7 +349,7 @@
     const target = index + direction;
     if (target < 0 || target >= items.length) return;
     swapItems(items, index, target);
-    markDirty(section);
+    markDirty(section, 'reorder');
     render();
   }
 
@@ -339,7 +358,7 @@
     const targetPosition = position + direction;
     if (targetPosition < 0 || targetPosition >= groupIndexes.length) return;
     swapItems(items, index, groupIndexes[targetPosition]);
-    markDirty(section);
+    markDirty(section, 'reorder');
     renderPortfolioSection(section);
   }
 
@@ -396,10 +415,22 @@
           values[index] = value;
           markDirty(section);
         });
+        input.addEventListener('change', () => {
+          if (input.value.trim() !== '' || String(tag).trim() === '') return;
+          if (!confirmRemoval(`technology "${tag}"`)) {
+            values[index] = tag;
+            input.value = tag;
+            return;
+          }
+          values.splice(index, 1);
+          markDirty(section, 'delete');
+          render();
+        });
         const remove = makeButton('x', 'icon-button button-danger', 'Remove technology');
         remove.addEventListener('click', () => {
+          if (!confirmRemoval(`technology "${tag || index + 1}"`)) return;
           values.splice(index, 1);
-          markDirty(section);
+          markDirty(section, 'delete');
           render();
         });
         list.append(createElement('div', { className: 'token-row' }, [input, remove]));
@@ -407,9 +438,10 @@
     }
 
     add.addEventListener('click', () => {
+      if (!confirmAddition('a technology to this record')) return;
       if (!Array.isArray(item.techStack)) item.techStack = [];
       item.techStack.unshift('');
-      markDirty(section);
+      markDirty(section, 'add');
       render();
       list.querySelector('input')?.focus();
     });
@@ -460,7 +492,7 @@
         remove.addEventListener('click', () => {
           if (!confirmRemoval(`action "${action.label || index + 1}"`)) return;
           actions.splice(index, 1);
-          markDirty(section);
+          markDirty(section, 'delete');
           render();
         });
         list.append(createElement('div', { className: 'action-row' }, [
@@ -474,9 +506,10 @@
     }
 
     add.addEventListener('click', () => {
+      if (!confirmAddition('a new action')) return;
       if (!Array.isArray(item.actions)) item.actions = [];
       item.actions.unshift({ label: '', type: 'external', url: '' });
-      markDirty(section);
+      markDirty(section, 'add');
       render();
       list.querySelector('input')?.focus();
     });
@@ -497,7 +530,7 @@
       () => {
         if (!confirmRemoval(`${singular} "${item.title || `#${index + 1}`}"`)) return;
         items.splice(index, 1);
-        markDirty(section);
+        markDirty(section, 'delete');
         renderPortfolioSection(section);
       }
     );
@@ -601,13 +634,25 @@
         markDirty('tech_stack');
       });
       input.addEventListener('change', () => {
+        if (input.value.trim() === '' && String(tag).trim() !== '') {
+          if (!confirmRemoval(`technology "${tag}"`)) {
+            state.tech_stack[index] = tag;
+            input.value = tag;
+            return;
+          }
+          state.tech_stack.splice(index, 1);
+          markDirty('tech_stack', 'delete');
+          renderTechStack();
+          return;
+        }
         state.tech_stack = cleanTags(state.tech_stack);
         renderTechStack();
       });
       const remove = makeButton('x', 'icon-button button-danger', 'Remove technology');
       remove.addEventListener('click', () => {
+        if (!confirmRemoval(`technology "${tag || index + 1}"`)) return;
         state.tech_stack.splice(index, 1);
-        markDirty('tech_stack');
+        markDirty('tech_stack', 'delete');
         renderTechStack();
       });
       container.append(createElement('div', { className: 'token-row' }, [input, remove]));
@@ -635,7 +680,7 @@
         () => {
           if (!confirmRemoval(`achievement "${item.title || `#${index + 1}`}"`)) return;
           items.splice(index, 1);
-          markDirty('industry_experiences');
+          markDirty('industry_experiences', 'delete');
           renderAchievements();
         }
       );
@@ -654,6 +699,22 @@
     });
   }
 
+  function legacyLogValue(before, after, path = '') {
+    if (JSON.stringify(before) === JSON.stringify(after)) return [];
+    const beforeObject = before && typeof before === 'object';
+    const afterObject = after && typeof after === 'object';
+    if (!beforeObject || !afterObject) {
+      return [`${path || 'value'}: ${JSON.stringify(before)} -> ${JSON.stringify(after)}`];
+    }
+
+    const keys = new Set([...Object.keys(before), ...Object.keys(after)]);
+    return [...keys].flatMap((key) => legacyLogValue(
+      before[key],
+      after[key],
+      path ? `${path}.${key}` : key
+    ));
+  }
+
   function renderLogs() {
     const tableBody = document.getElementById('logsTableBody');
     if (!tableBody) return;
@@ -661,7 +722,7 @@
     setText('logsCount', logs.length);
 
     if (!logs.length) {
-      const cell = createElement('td', { colSpan: 6 });
+      const cell = createElement('td', { colSpan: 4 });
       cell.append(emptyState('No save attempts have been logged yet.'));
       tableBody.append(createElement('tr', {}, [cell]));
       return;
@@ -675,22 +736,13 @@
         : timestamp.toLocaleString([], { dateStyle: 'medium', timeStyle: 'medium' });
       const status = String(log.status || 'unknown');
       const section = sectionLabels[log.section] || String(log.section || 'Unknown').replaceAll('_', ' ');
-      const raw = {
-        errors: arrayValue(log.errors),
-        before: log.before ?? null,
-        after: log.after ?? null,
-      };
-      const details = createElement('details', { className: 'raw-log' }, [
-        createElement('summary', { text: 'View JSON' }),
-        createElement('pre', { text: JSON.stringify(raw, null, 2) }),
-      ]);
+      const legacyValue = legacyLogValue(log.before ?? null, log.after ?? null).join('\n');
+      const value = String(log.value || legacyValue || arrayValue(log.errors).join(' ') || 'No value recorded.');
       tableBody.append(createElement('tr', {}, [
         createElement('td', { text: time }),
         createElement('td', {}, [createElement('span', { className: `log-status is-${status}`, text: status })]),
         createElement('td', { text: section }),
-        createElement('td', {}, [createElement('code', { text: String(log.action || 'save') })]),
-        createElement('td', { text: String(log.record || '-') }),
-        createElement('td', {}, [details]),
+        createElement('td', {}, [createElement('pre', { className: 'log-value', text: value })]),
       ]));
     });
   }
@@ -729,7 +781,7 @@
         () => {
           if (!confirmRemoval(`role "${item.role || `#${index + 1}`}"`)) return;
           items.splice(index, 1);
-          markDirty('industry_experiences');
+          markDirty('industry_experiences', 'delete');
           renderRoles();
         }
       );
@@ -824,8 +876,9 @@
   });
 
   document.getElementById('addTechButton').addEventListener('click', () => {
+    if (!confirmAddition('a new technology')) return;
     state.tech_stack.unshift('');
-    markDirty('tech_stack');
+    markDirty('tech_stack', 'add');
     renderTechStack();
     document.querySelector('#techStackList input')?.focus();
   });
@@ -851,6 +904,8 @@
       newGroup.focus();
       return;
     }
+    const singular = activeDialogSection === 'projects' ? 'project' : 'milestone';
+    if (!confirmAddition(`this ${singular} in "${group}"`)) return;
     state[activeDialogSection].unshift({
       title: '',
       group,
@@ -860,7 +915,7 @@
     });
     const section = activeDialogSection;
     activePortfolioGroup[section] = group;
-    markDirty(section);
+    markDirty(section, 'add');
     renderPortfolioSection(section);
     closeAddDialog();
     window.requestAnimationFrame(() => {
@@ -870,17 +925,19 @@
   });
 
   document.getElementById('addAchievementButton').addEventListener('click', () => {
+    if (!confirmAddition('a new achievement')) return;
     setExperienceTab('achievements');
     state.industry_experiences.keyAchievements.unshift({ title: '', summary: '' });
-    markDirty('industry_experiences');
+    markDirty('industry_experiences', 'add');
     renderAchievements();
     document.querySelector('#achievementsList input')?.focus();
   });
 
   document.getElementById('addRoleButton').addEventListener('click', () => {
+    if (!confirmAddition('a new career role')) return;
     setExperienceTab('roles');
     state.industry_experiences.roles.unshift({ from: '', to: '', role: '', scope: '', current: false });
-    markDirty('industry_experiences');
+    markDirty('industry_experiences', 'add');
     renderRoles();
     document.querySelector('#rolesList input')?.focus();
   });

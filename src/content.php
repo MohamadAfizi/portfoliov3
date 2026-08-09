@@ -4,7 +4,6 @@ declare(strict_types=1);
 require_once __DIR__ . '/lib/bootstrap.php';
 
 $contentPath = __DIR__ . '/data/content.json';
-$backupPath = __DIR__ . '/data/content.backup.json';
 $logsPath = __DIR__ . '/data/logs.json';
 $allowedSections = ['site', 'tech_stack', 'projects', 'milestones', 'industry_experiences'];
 $currentContent = load_content();
@@ -187,6 +186,153 @@ function editor_log_subject(mixed $before, mixed $after, string $section): strin
     return is_array($candidate) ? (string) ($candidate['title'] ?? '') : '';
 }
 
+function editor_log_scalar(mixed $value): string
+{
+    if (is_string($value)) {
+        return '"' . $value . '"';
+    }
+    if ($value === null) {
+        return 'null';
+    }
+    if (is_bool($value)) {
+        return $value ? 'true' : 'false';
+    }
+    if (is_array($value)) {
+        try {
+            return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return '[unavailable value]';
+        }
+    }
+    return (string) $value;
+}
+
+function editor_log_label_for_path(string $path): string
+{
+    $segment = strtolower((string) preg_replace('/.*(?:\.|\\[)([a-z_]+)(?:\\]|$)/i', '$1', $path));
+    return match ($segment) {
+        'techstack', 'tech_stack' => 'technology',
+        'actions' => 'action',
+        'keyachievements' => 'achievement',
+        'roles' => 'role',
+        'positions' => 'position',
+        'projects' => 'project',
+        'milestones' => 'milestone',
+        default => $segment !== '' ? str_replace('_', ' ', $segment) : 'value',
+    };
+}
+
+function editor_log_is_list_array(array $value): bool
+{
+    if (function_exists('array_is_list')) {
+        return array_is_list($value);
+    }
+    return array_keys($value) === range(0, count($value) - 1);
+}
+
+function editor_log_list_difference(array $source, array $comparison): array
+{
+    $remaining = array_values($comparison);
+    $difference = [];
+
+    foreach ($source as $value) {
+        $matchedIndex = null;
+        foreach ($remaining as $index => $candidate) {
+            if ($value === $candidate) {
+                $matchedIndex = $index;
+                break;
+            }
+        }
+        if ($matchedIndex === null) {
+            $difference[] = $value;
+            continue;
+        }
+        array_splice($remaining, $matchedIndex, 1);
+    }
+    return $difference;
+}
+
+function editor_log_list_value(array $before, array $after, string $label): array
+{
+    $lines = [];
+    foreach (editor_log_list_difference($after, $before) as $value) {
+        $lines[] = 'Added ' . $label . ': ' . editor_log_scalar($value);
+    }
+    foreach (editor_log_list_difference($before, $after) as $value) {
+        $lines[] = 'Deleted ' . $label . ': ' . editor_log_scalar($value);
+    }
+    if (!$lines && $before !== $after) {
+        $lines[] = ucfirst($label) . ' order changed.';
+    }
+    return $lines;
+}
+
+function editor_log_object_value(mixed $before, mixed $after, string $path = ''): array
+{
+    if ($before === $after) {
+        return [];
+    }
+    if (!is_array($before) || !is_array($after)) {
+        return [($path !== '' ? $path : 'value') . ': ' . editor_log_scalar($before) . ' -> ' . editor_log_scalar($after)];
+    }
+    if (editor_log_is_list_array($before) && editor_log_is_list_array($after)) {
+        return editor_log_list_value($before, $after, editor_log_label_for_path($path));
+    }
+
+    $lines = [];
+    foreach (array_unique(array_merge(array_keys($before), array_keys($after))) as $key) {
+        $nextPath = $path === '' ? (string) $key : $path . '.' . $key;
+        $lines = array_merge(
+            $lines,
+            editor_log_object_value($before[$key] ?? null, $after[$key] ?? null, $nextPath)
+        );
+    }
+    return $lines;
+}
+
+function editor_log_value(
+    mixed $before,
+    mixed $after,
+    string $section,
+    bool $success,
+    array $attemptedActions,
+    array $errors
+): string {
+    if (!$success) {
+        $attempted = $attemptedActions ? implode(', ', $attemptedActions) : 'save';
+        return 'Attempted: ' . $attempted . PHP_EOL . 'Error: ' . implode(' ', $errors);
+    }
+
+    $lines = [];
+    if (in_array($section, ['tech_stack', 'projects', 'milestones'], true)) {
+        $label = match ($section) {
+            'tech_stack' => 'technology',
+            'projects' => 'project',
+            default => 'milestone',
+        };
+        $lines = editor_log_list_value(editor_array($before), editor_array($after), $label);
+    } elseif ($section === 'industry_experiences') {
+        $beforeIndustry = editor_array($before);
+        $afterIndustry = editor_array($after);
+        $lines = array_merge(
+            editor_log_list_value(
+                editor_array($beforeIndustry['keyAchievements'] ?? null),
+                editor_array($afterIndustry['keyAchievements'] ?? null),
+                'achievement'
+            ),
+            editor_log_list_value(
+                editor_array($beforeIndustry['roles'] ?? null),
+                editor_array($afterIndustry['roles'] ?? null),
+                'role'
+            )
+        );
+    } else {
+        $lines = editor_log_object_value($before, $after);
+    }
+
+    return $lines ? implode(PHP_EOL, $lines) : 'No content values changed.';
+}
+
 function append_editor_log(string $path, array $entry): bool
 {
     $handle = @fopen($path, 'c+');
@@ -244,6 +390,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $section = is_array($payload) ? (string) ($payload['section'] ?? '') : '';
+    $submittedOperations = [];
+    if (is_array($payload) && is_array($payload['operations'] ?? null)) {
+        foreach (['add', 'edit', 'delete', 'reorder'] as $operation) {
+            if (in_array($operation, $payload['operations'], true)) {
+                $submittedOperations[] = $operation;
+            }
+        }
+    }
     if (!is_array($payload) || $section === '') {
         $errors[] = 'A section name is required.';
     }
@@ -264,11 +418,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $nextContent,
                 JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
             ) . PHP_EOL;
-            $currentJson = file_get_contents($contentPath);
-
-            if ($currentJson === false || file_put_contents($backupPath, $currentJson, LOCK_EX) === false) {
-                throw new RuntimeException('Could not create the content backup.');
-            }
             if (file_put_contents($contentPath, $encoded, LOCK_EX) === false) {
                 throw new RuntimeException('Could not write the content file.');
             }
@@ -284,13 +433,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $logId = uniqid('log_', true);
     }
 
+    $detectedAction = editor_log_action($beforeSnapshot, $afterSnapshot, $section, !$errors);
+    $logAction = $errors ? 'save_failed' : ($submittedOperations ? implode(' + ', $submittedOperations) : $detectedAction);
     $logEntry = [
         'id' => $logId,
         'timestamp' => date(DATE_ATOM),
         'status' => $errors ? 'failed' : 'success',
         'section' => $section !== '' ? $section : 'unknown',
-        'action' => editor_log_action($beforeSnapshot, $afterSnapshot, $section, !$errors),
-        'record' => editor_log_subject($beforeSnapshot, $afterSnapshot, $section),
+        'action' => $logAction,
+        'attempted_actions' => $submittedOperations,
+        'value' => editor_log_value(
+            $beforeSnapshot,
+            $afterSnapshot,
+            $section,
+            !$errors,
+            $submittedOperations,
+            $errors
+        ),
         'errors' => $errors,
         'before' => $beforeSnapshot,
         'after' => $afterSnapshot,
@@ -343,7 +502,7 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
   </div>
 
   <nav class="jump-nav" aria-label="Editor sections">
-    <a class="jump-tech" href="#tech-stack">Tech <span id="navTechCount"><?= $techCount ?></span></a>
+    <a class="jump-tech" href="#tech-stack">Tech Stack <span id="navTechCount"><?= $techCount ?></span></a>
     <a class="jump-projects" href="#projects">Projects <span id="navProjectsCount"><?= $projectCount ?></span></a>
     <a class="jump-milestones" href="#milestones">Milestones <span id="navMilestonesCount"><?= $milestoneCount ?></span></a>
     <a class="jump-experience" href="#experience">Experience <span id="navExperienceCount"><?= $achievementCount + $roleCount ?></span></a>
@@ -488,7 +647,7 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
     <header class="section-heading">
       <div class="section-identity">
         <span class="section-number">06</span>
-        <div><h2>Change Logs</h2><p><span id="logsCount"><?= $logCount ?></span> successful and failed save attempts</p></div>
+        <div><h2>Change Logs</h2><p><span id="logsCount"><?= $logCount ?></span> entries</p></div>
       </div>
       <div class="section-actions">
         <span class="log-file-label">src/data/logs.json</span>
@@ -501,9 +660,7 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
             <th scope="col">Time</th>
             <th scope="col">Status</th>
             <th scope="col">Section</th>
-            <th scope="col">Action</th>
-            <th scope="col">Record</th>
-            <th scope="col">Raw change</th>
+            <th scope="col">Value</th>
           </tr>
         </thead>
         <tbody id="logsTableBody"></tbody>

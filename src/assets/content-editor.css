@@ -937,23 +937,12 @@ select:focus {
   background: var(--danger-soft);
 }
 
-.raw-log summary {
-  width: max-content;
-  color: #365f83;
-  font-size: 9px;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.raw-log pre {
-  width: min(720px, 70vw);
-  max-height: 420px;
+.log-value {
+  max-height: 220px;
   overflow: auto;
-  margin: 7px 0 0;
-  padding: 8px;
-  border-radius: 6px;
-  color: #e6ebef;
-  background: #252b30;
+  margin: 0;
+  color: var(--ink);
+  background: transparent;
   font-family: "JetBrains Mono", monospace;
   font-size: 9px;
   line-height: 1.5;

@@ -4,8 +4,6 @@
   </h3>
   <div class="analytics-stage">
     <canvas id="visitorAnalyticsChart" class="analytics-slide"></canvas>
-    <div id="githubContributionGraph" class="analytics-slide github-contributions" hidden aria-live="polite">
-      <p class="github-status"><?= e($content['github']['loading_text'] ?? '') ?></p>
-    </div>
+    <!-- Future second analytics chart goes here. Keep the visitor chart as the primary live view for now. -->
   </div>
 </div>

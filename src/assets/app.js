@@ -638,25 +638,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // ============================================
-// Visitor Analytics & GitHub Contributions
+// Visitor Analytics
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
   const analyticsSliderTitle = document.getElementById('analyticsSliderTitle');
   const chartCanvas = document.getElementById('visitorAnalyticsChart');
-  const githubGraph = document.getElementById('githubContributionGraph');
-  if (!chartCanvas || !githubGraph) return;
+  if (!analyticsSliderTitle || !chartCanvas) return;
 
   const analyticsData = portfolioData.analytics || {};
   const visitorData = analyticsData.visitors || { labels: [], values: [] };
-  const githubConfig = portfolioData.github || {};
   let analyticsChart = null;
-  let currentSlideIndex = 0;
-  let githubRequest = null;
-  let analyticsTransitionTimer = null;
-  let analyticsTitleTimer = null;
-  const analyticsSlides = [chartCanvas, githubGraph];
-  const prefersReducedMotion = typeof window.matchMedia === 'function'
-    && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   if (typeof Chart !== 'undefined') {
     Chart.defaults.font.family = "'JetBrains Mono', 'Cascadia Code', 'Fira Code', Consolas, monospace";
@@ -770,167 +761,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   };
 
-  function showGithubFallback() {
-    githubGraph.innerHTML = '';
-
-    const status = document.createElement('p');
-    status.className = 'github-status github-status-error';
-    status.textContent = githubConfig.unavailable_text || '';
-    githubGraph.appendChild(status);
-
-    if (githubConfig.profile_url) {
-      const link = document.createElement('a');
-      link.className = 'github-profile-link';
-      link.href = githubConfig.profile_url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.textContent = githubConfig.view_profile_label || githubConfig.profile_url;
-      githubGraph.appendChild(link);
-    }
-  }
-
-  function contributionText(day) {
-    const count = Number(day.count) || 0;
-    const noun = count === 1
-      ? (githubConfig.contribution_singular || 'contribution')
-      : (githubConfig.contribution_plural || 'contributions');
-    const date = new Date(`${day.date}T00:00:00Z`).toLocaleDateString(undefined, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'UTC'
-    });
-    return `${count} ${noun} ${githubConfig.on_label || 'on'} ${date}`;
-  }
-
-  function renderGithubCalendar(data) {
-    const weeks = Array.isArray(data.weeks) ? data.weeks : [];
-    if (weeks.length === 0) {
-      showGithubFallback();
-      return;
-    }
-
-    githubGraph.innerHTML = '';
-
-    const summary = document.createElement('div');
-    summary.className = 'github-summary';
-
-    const total = document.createElement('span');
-    total.className = 'github-total';
-    total.textContent = `${Number(data.totalContributions) || 0} ${githubConfig.subtitle || ''}`.trim();
-    summary.appendChild(total);
-
-    const profileLink = document.createElement('a');
-    profileLink.className = 'github-profile-link';
-    profileLink.href = data.profileUrl || githubConfig.profile_url || '#';
-    profileLink.target = '_blank';
-    profileLink.rel = 'noopener noreferrer';
-    profileLink.textContent = githubConfig.view_profile_label || data.username || '';
-    summary.appendChild(profileLink);
-    githubGraph.appendChild(summary);
-
-    const scroller = document.createElement('div');
-    scroller.className = 'github-calendar-scroll';
-
-    const calendar = document.createElement('div');
-    calendar.className = 'github-calendar';
-
-    const months = document.createElement('div');
-    months.className = 'github-months';
-    months.style.gridTemplateColumns = `repeat(${weeks.length}, var(--github-cell-size))`;
-
-    let previousMonth = '';
-    weeks.forEach((week, weekIndex) => {
-      const firstDay = Array.isArray(week.days) ? week.days[0] : null;
-      if (!firstDay || !firstDay.date) return;
-      const date = new Date(`${firstDay.date}T00:00:00Z`);
-      const monthKey = `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
-      if (monthKey === previousMonth || date.getUTCDate() > 7) return;
-
-      const label = document.createElement('span');
-      label.textContent = date.toLocaleDateString(undefined, { month: 'short', timeZone: 'UTC' });
-      label.style.gridColumn = `${weekIndex + 1} / span 4`;
-      months.appendChild(label);
-      previousMonth = monthKey;
-    });
-    calendar.appendChild(months);
-
-    const weekGrid = document.createElement('div');
-    weekGrid.className = 'github-weeks';
-
-    weeks.forEach(week => {
-      const weekColumn = document.createElement('div');
-      weekColumn.className = 'github-week';
-
-      (Array.isArray(week.days) ? week.days : []).forEach(day => {
-        const cell = document.createElement('span');
-        const level = String(day.level || 'NONE').toLowerCase().replaceAll('_', '-');
-        const label = contributionText(day);
-        cell.className = 'github-day';
-        cell.dataset.level = level;
-        cell.title = label;
-        cell.setAttribute('role', 'img');
-        cell.setAttribute('aria-label', label);
-        weekColumn.appendChild(cell);
-      });
-
-      weekGrid.appendChild(weekColumn);
-    });
-
-    calendar.appendChild(weekGrid);
-    scroller.appendChild(calendar);
-    githubGraph.appendChild(scroller);
-
-    const legend = document.createElement('div');
-    legend.className = 'github-legend';
-
-    const less = document.createElement('span');
-    less.textContent = githubConfig.less_label || '';
-    legend.appendChild(less);
-
-    ['none', 'first-quartile', 'second-quartile', 'third-quartile', 'fourth-quartile'].forEach(level => {
-      const cell = document.createElement('span');
-      cell.className = 'github-day';
-      cell.dataset.level = level;
-      cell.setAttribute('aria-hidden', 'true');
-      legend.appendChild(cell);
-    });
-
-    const more = document.createElement('span');
-    more.textContent = githubConfig.more_label || '';
-    legend.appendChild(more);
-    githubGraph.appendChild(legend);
-  }
-
-  function loadGithubContributions() {
-    if (githubRequest) return githubRequest;
-
-    githubGraph.innerHTML = '';
-    const loading = document.createElement('p');
-    loading.className = 'github-status';
-    loading.textContent = githubConfig.loading_text || '';
-    githubGraph.appendChild(loading);
-
-    githubRequest = fetch('api/github-contributions.php', {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-      credentials: 'same-origin'
-    })
-      .then(response => {
-        if (!response.ok) throw new Error(`GitHub endpoint returned ${response.status}`);
-        return response.json();
-      })
-      .then(result => {
-        if (!result || result.ok !== true || !result.data) throw new Error('GitHub data was unavailable');
-        renderGithubCalendar(result.data);
-      })
-      .catch(() => {
-        showGithubFallback();
-      });
-
-    return githubRequest;
-  }
-
   function ensureVisitorAnalytics() {
     if (!analyticsChart && typeof Chart !== 'undefined') {
       analyticsChart = new Chart(chartCanvas, {
@@ -942,64 +772,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function updateAnalyticsTitle(text, animate) {
     if (!analyticsSliderTitle) return;
-    if (!animate || prefersReducedMotion) {
-      analyticsSliderTitle.textContent = text;
-      return;
-    }
-
-    if (analyticsTitleTimer) clearTimeout(analyticsTitleTimer);
-    analyticsSliderTitle.classList.add('is-changing');
-    analyticsTitleTimer = setTimeout(() => {
-      analyticsSliderTitle.textContent = text;
-      analyticsSliderTitle.classList.remove('is-changing');
-    }, 180);
+    analyticsSliderTitle.textContent = text;
   }
 
-  function renderAnalyticsSlide(index, animate = true) {
-    const incomingSlide = analyticsSlides[index];
-    const outgoingSlide = analyticsSlides[index === 1 ? 0 : 1];
-    const title = index === 1
-      ? (githubConfig.title || '')
-      : (uiText.visitor_analytics_title || '');
+  ensureVisitorAnalytics();
+  chartCanvas.classList.add('is-active');
+  chartCanvas.removeAttribute('hidden');
+  updateAnalyticsTitle(uiText.visitor_analytics_title || '', false);
+  if (analyticsChart) analyticsChart.resize();
 
-    if (index === 1) {
-      loadGithubContributions();
-    } else {
-      ensureVisitorAnalytics();
-    }
-
-    if (analyticsTransitionTimer) clearTimeout(analyticsTransitionTimer);
-    incomingSlide.hidden = false;
-    incomingSlide.setAttribute('aria-hidden', 'false');
-    outgoingSlide.setAttribute('aria-hidden', 'true');
-
-    if (!animate || prefersReducedMotion) {
-      outgoingSlide.classList.remove('is-active');
-      outgoingSlide.hidden = true;
-      incomingSlide.classList.add('is-active');
-      updateAnalyticsTitle(title, false);
-      if (index === 0 && analyticsChart) analyticsChart.resize();
-      return;
-    }
-
-    incomingSlide.classList.remove('is-active');
-    void incomingSlide.offsetWidth;
-    requestAnimationFrame(() => {
-      outgoingSlide.classList.remove('is-active');
-      incomingSlide.classList.add('is-active');
-      if (index === 0 && analyticsChart) analyticsChart.resize();
-    });
-
-    updateAnalyticsTitle(title, true);
-    analyticsTransitionTimer = setTimeout(() => {
-      outgoingSlide.hidden = true;
-    }, 500);
-  }
-
-  renderAnalyticsSlide(currentSlideIndex, false);
-
-  setInterval(function() {
-    currentSlideIndex = (currentSlideIndex + 1) % 2;
-    renderAnalyticsSlide(currentSlideIndex);
-  }, 10000);
+  // Future second analytics chart:
+  // Add the next small, dynamic chart here once we have a better data source
+  // that fits this space without turning the panel into a static block.
 });

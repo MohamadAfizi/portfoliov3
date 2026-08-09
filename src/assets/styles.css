@@ -703,16 +703,11 @@ section {
   display: none;
 }
 
-.tech-pill {
-  background: rgba(109, 239, 248, 0.15);
-  border: 1px solid rgba(109, 239, 248, 0.3);
-  color: #6defF8;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  display: inline-block;
-  white-space: nowrap;
+.timeline-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 @media (max-width: 768px) {
@@ -1275,15 +1270,10 @@ textarea {
 }
 
 .card-screenshot,
-.tech-pill,
 .cards-pagination .page-btn,
 .page-doc-btn,
 .group-btn {
   border-radius: 3px;
-}
-
-.tech-pill {
-  padding: 3px 9px;
 }
 
 .card-link::before {

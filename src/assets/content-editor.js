@@ -412,30 +412,30 @@
     return [up, down, remove];
   }
 
-  function createTokenEditor(item, section) {
+  function createTokenEditor(item, section, path = 'techStack', label = 'Technologies', singular = 'technology', addLabel = '+ Add tech') {
     const panel = createElement('div', { className: 'record-subpanel' });
     const list = createElement('div', { className: 'token-list' });
-    const add = makeButton('+ Add tech', 'button button-quiet');
+    const add = makeButton(addLabel, 'button button-quiet');
     const heading = createElement('div', { className: 'subpanel-heading' }, [
-      createElement('strong', { text: 'Technologies' }),
+      createElement('strong', { text: label }),
       add,
     ]);
 
     function render() {
       list.replaceChildren();
-      const values = arrayValue(item.techStack);
+      const values = arrayValue(item[path]);
       if (!values.length) {
-        list.append(emptyState('No technologies assigned.'));
+        list.append(emptyState(`No ${label.toLowerCase()} assigned.`));
         return;
       }
       values.forEach((tag, index) => {
-        const input = makeInput(tag, 'Technology', (value) => {
+        const input = makeInput(tag, singular, (value) => {
           values[index] = value;
           markDirty(section);
         });
         input.addEventListener('change', async () => {
           if (input.value.trim() !== '' || String(tag).trim() === '') return;
-          if (!await confirmRemoval(`technology "${tag}"`)) {
+          if (!await confirmRemoval(`${singular} "${tag}"`)) {
             values[index] = tag;
             input.value = tag;
             return;
@@ -444,9 +444,9 @@
           markDirty(section, 'delete');
           render();
         });
-        const remove = makeButton('x', 'icon-button button-danger', 'Remove technology');
+        const remove = makeButton('x', 'icon-button button-danger', `Remove ${singular}`);
         remove.addEventListener('click', async () => {
-          if (!await confirmRemoval(`technology "${tag || index + 1}"`)) return;
+          if (!await confirmRemoval(`${singular} "${tag || index + 1}"`)) return;
           values.splice(index, 1);
           markDirty(section, 'delete');
           render();
@@ -456,9 +456,9 @@
     }
 
     add.addEventListener('click', async () => {
-      if (!await confirmAddition('a technology to this record')) return;
-      if (!Array.isArray(item.techStack)) item.techStack = [];
-      item.techStack.unshift('');
+      if (!await confirmAddition(`a ${singular} to this record`)) return;
+      if (!Array.isArray(item[path])) item[path] = [];
+      item[path].unshift('');
       markDirty(section, 'add');
       render();
       list.querySelector('input')?.focus();
@@ -846,6 +846,7 @@
         item.scope = value;
         markDirty('industry_experiences');
       });
+      const skills = createTokenEditor(item, 'industry_experiences', 'skills', 'Skills', 'skill', '+ Add skill');
       shell.body.append(
         createElement('div', { className: 'field-grid field-grid-3' }, [
           makeField('Role', role),
@@ -856,7 +857,8 @@
           current,
           createElement('span', { text: 'Mark as current role' }),
         ]),
-        makeField('Scope and responsibilities', scope)
+        makeField('Scope and responsibilities', scope),
+        skills
       );
       container.append(shell.card);
     });
@@ -974,7 +976,7 @@
   document.getElementById('addRoleButton').addEventListener('click', async () => {
     if (!await confirmAddition('a new career role')) return;
     setExperienceTab('roles');
-    state.industry_experiences.roles.unshift({ from: '', to: '', role: '', scope: '', current: false });
+    state.industry_experiences.roles.unshift({ from: '', to: '', role: '', scope: '', skills: [], current: false });
     markDirty('industry_experiences', 'add');
     renderRoles();
     document.querySelector('#rolesList input')?.focus();

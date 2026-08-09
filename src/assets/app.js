@@ -13,6 +13,14 @@ function readPortfolioData() {
 const portfolioData = readPortfolioData();
 const uiText = portfolioData.ui || {};
 
+function createSkillTag(skill, index = 0) {
+  const tag = document.createElement('span');
+  tag.className = 'skill-tag';
+  tag.style.animationDelay = `${(index * 0.1) + 0.2}s`;
+  tag.textContent = skill;
+  return tag;
+}
+
 // Track asynchronously so IP-location lookup never delays the visible page.
 document.addEventListener('DOMContentLoaded', function() {
   fetch('api/track-visitor.php', {
@@ -161,11 +169,8 @@ document.addEventListener('DOMContentLoaded', function() {
           if (cardText) cardText.textContent = item.description || '';
           if (cardTechstack) {
             cardTechstack.innerHTML = '';
-            (item.techStack || []).forEach(skill => {
-              const pill = document.createElement('span');
-              pill.className = 'tech-pill';
-              pill.textContent = skill;
-              cardTechstack.appendChild(pill);
+            (item.techStack || []).forEach((skill, skillIndex) => {
+              cardTechstack.appendChild(createSkillTag(skill, skillIndex));
             });
           }
           if (cardLinks) {
@@ -343,6 +348,16 @@ document.addEventListener('DOMContentLoaded', function() {
           }
           scope.appendChild(document.createTextNode(experience.scope));
           role.appendChild(scope);
+        }
+
+        const skills = Array.isArray(experience.skills) ? experience.skills.filter(Boolean) : [];
+        if (skills.length > 0) {
+          const skillList = document.createElement('div');
+          skillList.className = 'timeline-skills';
+          skills.forEach((skill, skillIndex) => {
+            skillList.appendChild(createSkillTag(skill, skillIndex));
+          });
+          role.appendChild(skillList);
         }
 
         roles.appendChild(role);
@@ -629,11 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   container.innerHTML = '';
   skills.forEach((skill, index) => {
-    const span = document.createElement('span');
-    span.className = 'skill-tag';
-    span.style.animationDelay = `${(index * 0.1) + 0.2}s`;
-    span.textContent = skill;
-    container.appendChild(span);
+    container.appendChild(createSkillTag(skill, index));
   });
 });
 

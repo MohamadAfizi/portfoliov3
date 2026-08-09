@@ -19,6 +19,18 @@ function editor_array(mixed $value): array
     return is_array($value) ? $value : [];
 }
 
+function normalize_editor_tags(mixed $value): array
+{
+    $tags = [];
+    foreach (editor_array($value) as $tag) {
+        $tag = trim((string) $tag);
+        if ($tag !== '' && !in_array($tag, $tags, true)) {
+            $tags[] = $tag;
+        }
+    }
+    return $tags;
+}
+
 function normalize_editor_payload(array $input, array $baseContent, string $section): array
 {
     $content = $baseContent;
@@ -31,14 +43,7 @@ function normalize_editor_payload(array $input, array $baseContent, string $sect
     }
 
     if ($section === 'tech_stack') {
-        $tags = [];
-        foreach (editor_array($input['tech_stack'] ?? null) as $tag) {
-            $tag = trim((string) $tag);
-            if ($tag !== '' && !in_array($tag, $tags, true)) {
-                $tags[] = $tag;
-            }
-        }
-        $content['tech_stack'] = $tags;
+        $content['tech_stack'] = normalize_editor_tags($input['tech_stack'] ?? null);
     }
 
     if ($section === 'projects' || $section === 'milestones') {
@@ -46,7 +51,16 @@ function normalize_editor_payload(array $input, array $baseContent, string $sect
     }
 
     if ($section === 'industry_experiences') {
-        $content['industry_experiences'] = editor_array($input['industry_experiences'] ?? null);
+        $industry = editor_array($input['industry_experiences'] ?? null);
+        $roles = editor_array($industry['roles'] ?? null);
+        foreach ($roles as &$role) {
+            if (is_array($role)) {
+                $role['skills'] = normalize_editor_tags($role['skills'] ?? null);
+            }
+        }
+        unset($role);
+        $industry['roles'] = array_values($roles);
+        $content['industry_experiences'] = $industry;
     }
 
     return $content;
@@ -119,6 +133,9 @@ function validate_editor_section(array $content, string $section, array $allowed
         }
         if (isset($role['positions']) && !is_array($role['positions'])) {
             $errors[] = 'Industry role #' . ($index + 1) . ' positions must be a list.';
+        }
+        if (isset($role['skills']) && !is_array($role['skills'])) {
+            $errors[] = 'Industry role #' . ($index + 1) . ' skills must be a list.';
         }
     }
     return $errors;
@@ -212,6 +229,7 @@ function editor_log_label_for_path(string $path): string
     $segment = strtolower((string) preg_replace('/.*(?:\.|\\[)([a-z_]+)(?:\\]|$)/i', '$1', $path));
     return match ($segment) {
         'techstack', 'tech_stack' => 'technology',
+        'skills' => 'skill',
         'actions' => 'action',
         'keyachievements' => 'achievement',
         'roles' => 'role',
@@ -490,7 +508,7 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<link rel="stylesheet" href="assets/content-editor.css">
+<link rel="stylesheet" href="assets/content-editor.css?v=<?= filemtime(__DIR__ . '/assets/content-editor.css') ?>">
 </head>
 <body>
 <header class="command-bar">
@@ -699,6 +717,6 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
 window.CONTENT_EDITOR_DATA = <?= $editorData ?>;
 window.CONTENT_EDITOR_LOGS = <?= $editorLogs ?>;
 </script>
-<script src="assets/content-editor.js"></script>
+<script src="assets/content-editor.js?v=<?= filemtime(__DIR__ . '/assets/content-editor.js') ?>"></script>
 </body>
 </html>

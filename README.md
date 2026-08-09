@@ -103,6 +103,7 @@ Industry Experience uses a separate text-only timeline structure:
       "to": "Present",
       "role": "Application Analyst & Developer",
       "scope": "A short, privacy-safe summary of the role.",
+      "skills": ["One skill", "Another skill"],
       "current": true
     }
   ]
@@ -112,6 +113,7 @@ Industry Experience uses a separate text-only timeline structure:
 To add a key achievement, insert another object inside `keyAchievements`. To add an experience, insert another object inside `roles`. Separate adjacent objects with commas. The page automatically creates achievement numbers, timeline dots, and connecting line segments.
 
 Roles follow their JSON order, so put the newest role first. Set only the active role to `"current": true`; its dot receives the filled glow while past-role dots stay hollow. Use `"to": "Present"` for the active role and a month plus year for completed roles. There is no hard-coded three-role limit.
+Use `skills` for compact role-level tags, the same way `tech_stack` uses tags for the portfolio-wide tech list.
 
 Several earlier positions can be compiled under one connected timeline role with the optional `positions` array:
 

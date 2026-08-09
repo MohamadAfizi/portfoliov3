@@ -857,6 +857,11 @@
                 "to": "Present",
                 "role": "Executive, Web Engineering",
                 "scope": "Replace this with a short summary of your current responsibilities and area of impact.",
+                "skills": [
+                    "Web Development",
+                    "System Integration",
+                    "Technical Support"
+                ],
                 "current": true
             },
             {
@@ -864,6 +869,11 @@
                 "to": "Dec 2024",
                 "role": "Past Experience A",
                 "scope": "Replace this with a short summary of your responsibilities and contributions in this role.",
+                "skills": [
+                    "Business Analysis",
+                    "Database Management",
+                    "Process Automation"
+                ],
                 "current": false
             },
             {
@@ -871,6 +881,11 @@
                 "to": "Dec 2022",
                 "role": "Past Experience B",
                 "scope": "Replace this with a short summary of your responsibilities and contributions in this role.",
+                "skills": [
+                    "Data Analysis",
+                    "Reporting",
+                    "System Administration"
+                ],
                 "current": false
             },
             {
@@ -878,6 +893,7 @@
                 "to": "Dec 2019",
                 "role": "Earlier Career C",
                 "scope": "Roles spanning immigration consulting, HR operations, payroll administration, and records management — building the operational and compliance foundation that now informs how I design business systems.",
+                "skills": [],
                 "current": false,
                 "positions": [
                     {

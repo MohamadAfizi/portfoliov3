@@ -1,4 +1,4 @@
-﻿{
+{
     "site":  {
                  "language":  "en",
                  "title":  "Mohamad Afizi\u0027s Portfolio Website",
@@ -15,7 +15,7 @@
     "navigation":  {
                        "projects":  {
                                         "label":  "./projects",
-                                        "description":  "A range of projects across independent builds, technical experiments, and guided learning â€” showcasing how I think, solve, and execute."
+                                        "description":  "A range of projects across independent builds, technical experiments, and guided learning — showcasing how I think, solve, and execute."
                                     },
                        "milestones":  {
                                           "label":  "./milestones",
@@ -23,7 +23,7 @@
                                       },
                        "industry_experiences":  {
                                                     "label":  "./industry-experiences",
-                                                    "description":  "Real-world contributions from my time in the industry â€” practical tasks, problem-solving, and hands-on experience across different roles and environments."
+                                                    "description":  "Real-world contributions from my time in the industry — practical tasks, problem-solving, and hands-on experience across different roles and environments."
                                                 }
                    },
     "ui":  {
@@ -36,7 +36,7 @@
                    "profile_url":  "https://github.com/MohamadAfizi",
                    "title":  "GitHub Contributions",
                    "subtitle":  "Contributions in the last year",
-                   "loading_text":  "Loading GitHub contributionsâ€¦",
+                   "loading_text":  "Loading GitHub contributions…",
                    "unavailable_text":  "GitHub contribution data is temporarily unavailable.",
                    "view_profile_label":  "View profile on GitHub",
                    "less_label":  "Less",

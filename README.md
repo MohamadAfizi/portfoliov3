@@ -21,7 +21,7 @@ portfoliov3/
     ├── data/
     │   ├── content.json          # the one editable content source
     │   ├── visitors.json         # generated visitor log; intentionally ignored by Git
-    │   └── .htaccess             # blocks public visitor-log access on Apache
+    │   └── .htaccess             # blocks all public data-directory access on Apache
     ├── lib/                      # reusable PHP functions only
     │   ├── bootstrap.php
     │   ├── content-loader.php
@@ -49,6 +49,7 @@ Edit `src/data/content.json` in VS Code or Notepad. The homepage reads this file
 - `navigation`: category labels and descriptions.
 - `ui`: chart and pagination labels.
 - `github`: GitHub username, profile URL, graph title, and graph wording.
+- `content_editor_auth`: private username and password used only by `content.php`.
 - `profile_summary`: introduction paragraph.
 - `tech_stack`: skill tags.
 - `projects` and `milestones`: card arrays.
@@ -144,6 +145,14 @@ Keep JSON commas and quotes valid. A quick validation command is:
 Get-Content -Raw src/data/content.json | ConvertFrom-Json | Out-Null
 ```
 
+## Content editor login
+
+Open `/content.php` and sign in with the credentials under `content_editor_auth` in `src/data/content.json`. The editor uses an HTTP-only PHP session, checks CSRF tokens on login, logout, and content saves, expires inactive sessions after eight hours, and pauses login attempts for one minute after five failures.
+
+The public homepage loader removes `content_editor_auth`, and the editor also removes it before embedding content in JavaScript. Apache denies browser access to the entire `src/data/` directory. Keep the equivalent directory rule when deploying behind a different web server.
+
+The password is stored as plain text because this is a simple file-based login. Keep the repository private, serve the editor over HTTPS outside local development, and replace the starter password before exposing the site publicly.
+
 ## Visitor tracking
 
 After the page loads, `app.js` asynchronously calls `api/track-visitor.php`. The endpoint creates `src/data/visitors.json` when needed and adds one entry using a file lock, without delaying the visible page. Public IP addresses are anonymized before storage. For public IPs, PHP requests location data from `https://ipapi.co/{ip}/json/`; failures do not stop the page. Previous location results are reused for the same anonymized IP range.
@@ -160,7 +169,7 @@ In PowerShell, configure the token and start PHP from the same terminal:
 
 ```powershell
 $env:GITHUB_TOKEN = "your-token"
-php -S localhost:8000 -t src
+php -S localhost:8000 -t src src/router.php
 ```
 
 For Docker, set the variable in the terminal before starting the container:
@@ -172,7 +181,7 @@ docker compose up -d
 
 If the token expires or GitHub is unavailable, the GitHub slide shows a profile link while Visitor Analytics and the rest of the site continue normally.
 
-The visitor log is ignored by Git so real analytics and personal data are never committed. The web-server user must have write permission for `src/data/`. Apache uses `src/data/.htaccess` to deny direct downloads. If deploying behind Nginx or another server, add an equivalent rule blocking `/data/visitors.json`.
+The visitor log is ignored by Git so real analytics and personal data are never committed. The web-server user must have write permission for `src/data/`. Apache uses `src/data/.htaccess` to deny direct downloads. If deploying behind Nginx or another server, add an equivalent rule blocking the entire `/data/` directory.
 
 ## Run locally
 
@@ -187,10 +196,10 @@ Then open `http://127.0.0.1:8082`.
 Or with PHP installed:
 
 ```powershell
-php -S 127.0.0.1:8082 -t src
+php -S 127.0.0.1:8082 -t src src/router.php
 ```
 
-The PHP development server does not process `.htaccess`; do not expose it publicly.
+The router blocks `/data/` requests because the PHP development server does not process `.htaccess`.
 
 ## Why there is no vendor folder
 

@@ -3,9 +3,13 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/json-helpers.php';
 
-function load_content(): array
+function load_content(bool $includePrivate = false): array
 {
     $content = read_json_file(__DIR__ . '/../data/content.json');
+
+    if (!$includePrivate) {
+        unset($content['content_editor_auth']);
+    }
 
     foreach (['tech_stack', 'projects', 'milestones', 'industry_experiences'] as $key) {
         if (!isset($content[$key]) || !is_array($content[$key])) {

@@ -1,4 +1,8 @@
 {
+    "content_editor_auth": {
+        "username": "fizzyjamal",
+        "password": "123456"
+    },
     "site":  {
                  "language":  "en",
                  "title":  "Mohamad Afizi\u0027s Portfolio Website",

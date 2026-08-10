@@ -303,7 +303,11 @@
     try {
       const response = await fetch(window.location.pathname, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+          'X-CSRF-Token': document.querySelector('meta[name="csrf-token"]')?.content || '',
+        },
         body: JSON.stringify({ ...state, section, operations }),
       });
       const result = await response.json();

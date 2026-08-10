@@ -2,11 +2,156 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/lib/bootstrap.php';
+require_once __DIR__ . '/lib/content-editor-auth.php';
 
 $contentPath = __DIR__ . '/data/content.json';
 $logsPath = __DIR__ . '/data/logs.json';
 $allowedSections = ['site', 'tech_stack', 'projects', 'milestones', 'industry_experiences'];
-$currentContent = load_content();
+$currentContent = load_content(true);
+
+content_editor_start_session();
+content_editor_send_security_headers();
+
+$requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+$contentType = strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? ''));
+$isJsonRequest = str_contains($contentType, 'application/json');
+$authCredentials = content_editor_credentials($currentContent);
+$authAction = $requestMethod === 'POST' ? (string) ($_POST['auth_action'] ?? '') : '';
+$loginError = '';
+
+if ($authAction === 'logout') {
+    if (!content_editor_is_authenticated($authCredentials)
+        || !content_editor_csrf_is_valid($_POST['csrf_token'] ?? null)) {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo 'Invalid logout request.';
+        exit;
+    }
+
+    content_editor_logout();
+    header('Location: content.php', true, 303);
+    exit;
+}
+
+if ($authAction === 'login') {
+    $waitSeconds = content_editor_login_wait_seconds();
+    if (!content_editor_csrf_is_valid($_POST['csrf_token'] ?? null)) {
+        $loginError = 'This login request expired. Refresh the page and try again.';
+    } elseif (!content_editor_auth_is_configured($authCredentials)) {
+        $loginError = 'Content editor login is not configured.';
+    } elseif ($waitSeconds > 0) {
+        $loginError = "Too many attempts. Try again in {$waitSeconds} seconds.";
+    } elseif (content_editor_login(
+        $authCredentials,
+        trim((string) ($_POST['username'] ?? '')),
+        (string) ($_POST['password'] ?? '')
+    )) {
+        header('Location: content.php', true, 303);
+        exit;
+    } else {
+        content_editor_record_failed_login();
+        $loginError = content_editor_login_wait_seconds() > 0
+            ? 'Too many attempts. Try again in 60 seconds.'
+            : 'Incorrect username or password.';
+    }
+}
+
+$isAuthenticated = content_editor_is_authenticated($authCredentials);
+
+if (!$isAuthenticated && $requestMethod === 'POST' && $isJsonRequest) {
+    http_response_code(401);
+    header('Content-Type: application/json; charset=UTF-8');
+    echo json_encode([
+        'ok' => false,
+        'errors' => ['Your editor session expired. Refresh the page and sign in again.'],
+    ], JSON_UNESCAPED_SLASHES);
+    exit;
+}
+
+if (!$isAuthenticated) {
+    $authConfigured = content_editor_auth_is_configured($authCredentials);
+    if (!$authConfigured) {
+        http_response_code(503);
+    } elseif ($loginError !== '') {
+        http_response_code(401);
+    }
+    $loginCsrfToken = content_editor_csrf_token();
+    ?><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Content Editor Login</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/content-editor.css?v=<?= filemtime(__DIR__ . '/assets/content-editor.css') ?>">
+</head>
+<body class="login-page">
+<main class="login-shell">
+  <section class="login-intro" aria-labelledby="login-title">
+    <span class="login-kicker">PRIVATE WORKSPACE / V3</span>
+    <img class="login-avatar" src="media/images/dp.png" alt="" aria-hidden="true">
+    <div>
+      <p class="login-index">01 / AUTHENTICATION</p>
+      <h1 id="login-title">Content control.</h1>
+      <p>Sign in to manage portfolio copy, projects, milestones, and industry experience.</p>
+    </div>
+    <span class="login-path">src/content.php</span>
+  </section>
+
+  <section class="login-panel">
+    <div class="login-panel-heading">
+      <span>AUTHORIZED ACCESS</span>
+      <span class="login-status-dot" aria-hidden="true"></span>
+    </div>
+    <form class="login-form" method="post">
+      <input type="hidden" name="auth_action" value="login">
+      <input type="hidden" name="csrf_token" value="<?= e($loginCsrfToken) ?>">
+      <div class="field">
+        <label for="loginUsername">Username</label>
+        <input id="loginUsername" name="username" type="text" autocomplete="username" required autofocus>
+      </div>
+      <div class="field">
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
+      </div>
+      <?php if ($loginError !== ''): ?>
+        <p class="login-error" role="alert"><?= e($loginError) ?></p>
+      <?php elseif (!$authConfigured): ?>
+        <p class="login-error" role="alert">Add content_editor_auth credentials to src/data/content.json.</p>
+      <?php else: ?>
+        <p class="login-note">Your session stays active for up to 8 hours of inactivity.</p>
+      <?php endif; ?>
+      <button class="button button-primary login-submit" type="submit"<?= $authConfigured ? '' : ' disabled' ?>>Enter editor</button>
+    </form>
+  </section>
+</main>
+</body>
+</html>
+    <?php
+    exit;
+}
+
+if ($requestMethod === 'POST') {
+    if (!$isJsonRequest) {
+        http_response_code(415);
+        header('Content-Type: text/plain; charset=UTF-8');
+        echo 'Content editor saves require JSON.';
+        exit;
+    }
+
+    if (!content_editor_csrf_is_valid($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null)) {
+        http_response_code(403);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo json_encode([
+            'ok' => false,
+            'errors' => ['The security token expired. Refresh the page and try again.'],
+        ], JSON_UNESCAPED_SLASHES);
+        exit;
+    }
+}
+
 $currentLogs = read_json_file($logsPath);
 
 function editor_string_length(string $value): int
@@ -394,7 +539,7 @@ function append_editor_log(string $path, array $entry): bool
     }
 }
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($requestMethod === 'POST') {
     header('Content-Type: application/json; charset=UTF-8');
     $errors = [];
     $payload = null;
@@ -489,7 +634,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $content = $currentContent;
-$editorData = encode_json_for_html($content);
+$editorSafeContent = $content;
+unset($editorSafeContent[CONTENT_EDITOR_AUTH_KEY]);
+$editorData = encode_json_for_html($editorSafeContent);
 $editorLogs = encode_json_for_html($currentLogs);
 $logCount = count($currentLogs);
 $projectCount = count(editor_array($content['projects'] ?? null));
@@ -503,6 +650,7 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="<?= e(content_editor_csrf_token()) ?>">
 <title>Portvolio v3 Content Editor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -526,12 +674,19 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
     <a class="jump-experience" href="#experience">Experience <span id="navExperienceCount"><?= $achievementCount + $roleCount ?></span></a>
   </nav>
 
-  <div class="save-overview">
-    <span class="save-dot" id="saveDot" aria-hidden="true"></span>
-    <div>
-      <strong id="saveOverview">All changes saved</strong>
-      <span>src/data/content.json</span>
+  <div class="editor-account">
+    <div class="save-overview">
+      <span class="save-dot" id="saveDot" aria-hidden="true"></span>
+      <div>
+        <strong id="saveOverview">All changes saved</strong>
+        <span>src/data/content.json</span>
+      </div>
     </div>
+    <form class="logout-form" method="post">
+      <input type="hidden" name="auth_action" value="logout">
+      <input type="hidden" name="csrf_token" value="<?= e(content_editor_csrf_token()) ?>">
+      <button class="button button-quiet logout-button" type="submit">Log out</button>
+    </form>
   </div>
 </header>
 

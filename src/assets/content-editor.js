@@ -287,6 +287,31 @@
     return `${sectionLabels[section]} updated`;
   }
 
+  async function readSaveResponse(response) {
+    const body = await response.text();
+    if (!body.trim()) {
+      throw new Error(`The save endpoint returned an empty response (HTTP ${response.status}). Refresh to verify the saved data.`);
+    }
+
+    let result;
+    try {
+      result = JSON.parse(body);
+    } catch {
+      const parsed = new DOMParser().parseFromString(body, 'text/html');
+      const serverDetail = String(parsed.body?.textContent || body)
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 240);
+      const detail = serverDetail ? ` Server detail: ${serverDetail}` : '';
+      throw new Error(`The save endpoint returned invalid JSON (HTTP ${response.status}).${detail} Refresh to verify the saved data.`);
+    }
+
+    if (!result || typeof result !== 'object' || Array.isArray(result)) {
+      throw new Error(`The save endpoint returned an unexpected JSON value (HTTP ${response.status}). Refresh to verify the saved data.`);
+    }
+    return result;
+  }
+
   async function saveSection(section, button) {
     const operations = [...(pendingOperations[section] || [])];
     const operationText = operations.length ? operations.join(', ') : 'edit';
@@ -303,6 +328,8 @@
     try {
       const response = await fetch(window.location.pathname, {
         method: 'POST',
+        credentials: 'same-origin',
+        cache: 'no-store',
         headers: {
           'Content-Type': 'application/json',
           Accept: 'application/json',
@@ -310,16 +337,16 @@
         },
         body: JSON.stringify({ ...state, section, operations }),
       });
-      const result = await response.json();
-      if (result.log) {
+      const result = await readSaveResponse(response);
+      if (result.logStored === true && result.log) {
         logs.push(result.log);
         renderLogs();
       }
-      if (result.logStored === false) {
-        showToast('The attempt was written to the PHP fallback log.', true);
+      if (!response.ok || !result.ok || result.persisted !== true) {
+        throw new Error(arrayValue(result.errors).join(' ') || result.logError || 'Save failed.');
       }
-      if (!response.ok || !result.ok) {
-        throw new Error(arrayValue(result.errors).join(' ') || 'Save failed.');
+      if (result.logStored !== true) {
+        throw new Error(result.logError || 'The audit log was not stored. The save was not committed.');
       }
 
       const message = successMessage(section, previousMetric);

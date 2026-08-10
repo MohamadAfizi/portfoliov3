@@ -7,13 +7,35 @@ function read_json_file(string $path): array
         return [];
     }
 
-    $json = file_get_contents($path);
-    if ($json === false) {
+    $handle = @fopen($path, 'rb');
+    if ($handle === false) {
+        return [];
+    }
+
+    $locked = false;
+    try {
+        $locked = @flock($handle, LOCK_SH);
+        if (!$locked) {
+            return [];
+        }
+        $json = stream_get_contents($handle);
+    } finally {
+        if ($locked) {
+            @flock($handle, LOCK_UN);
+        }
+        @fclose($handle);
+    }
+    if (!is_string($json)) {
         return [];
     }
 
     try {
-        $data = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
+        $data = json_decode(
+            $json,
+            true,
+            512,
+            JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR
+        );
     } catch (JsonException) {
         return [];
     }
@@ -25,6 +47,12 @@ function encode_json_for_html(array $data): string
 {
     return json_encode(
         $data,
-        JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+        JSON_HEX_TAG
+            | JSON_HEX_AMP
+            | JSON_HEX_APOS
+            | JSON_HEX_QUOT
+            | JSON_UNESCAPED_SLASHES
+            | JSON_INVALID_UTF8_SUBSTITUTE
+            | JSON_THROW_ON_ERROR
     );
 }

@@ -1,6 +1,77 @@
 <?php
 declare(strict_types=1);
 
+$requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+$contentType = strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? ''));
+$isJsonRequest = str_contains($contentType, 'application/json');
+$editorJsonResponseSent = false;
+$editorJsonBufferBaseLevel = ob_get_level();
+
+if ($requestMethod === 'POST' && $isJsonRequest) {
+    // PHP notices must never turn an API response into an HTML document.
+    ini_set('display_errors', '0');
+    ini_set('html_errors', '0');
+    ini_set('log_errors', '1');
+    ob_start();
+
+    register_shutdown_function(static function (): void {
+        global $editorJsonResponseSent, $editorJsonBufferBaseLevel;
+
+        if ($editorJsonResponseSent) {
+            return;
+        }
+
+        $error = error_get_last();
+        $fatalTypes = [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_USER_ERROR];
+        if (!is_array($error) || !in_array($error['type'] ?? null, $fatalTypes, true)) {
+            return;
+        }
+
+        while (ob_get_level() > $editorJsonBufferBaseLevel) {
+            ob_end_clean();
+        }
+
+        http_response_code(500);
+        header('Content-Type: application/json; charset=UTF-8');
+        echo '{"ok":false,"persisted":false,"logStored":false,"errors":["The server stopped while saving. No success was reported; refresh before trying again."]}';
+    });
+}
+
+function editor_encode_json(mixed $value, bool $pretty = false): string
+{
+    $flags = JSON_UNESCAPED_SLASHES
+        | JSON_UNESCAPED_UNICODE
+        | JSON_INVALID_UTF8_SUBSTITUTE
+        | JSON_THROW_ON_ERROR;
+    if ($pretty) {
+        $flags |= JSON_PRETTY_PRINT;
+    }
+
+    return json_encode($value, $flags);
+}
+
+function editor_send_json(array $payload, int $statusCode = 200): never
+{
+    global $editorJsonResponseSent, $editorJsonBufferBaseLevel;
+
+    $editorJsonResponseSent = true;
+    while (ob_get_level() > $editorJsonBufferBaseLevel) {
+        ob_end_clean();
+    }
+
+    http_response_code($statusCode);
+    header('Content-Type: application/json; charset=UTF-8');
+
+    try {
+        echo editor_encode_json($payload);
+    } catch (Throwable $exception) {
+        error_log('Content editor response encoding failed: ' . $exception->getMessage());
+        http_response_code(500);
+        echo '{"ok":false,"persisted":false,"logStored":false,"errors":["The server could not encode the save response. Refresh before trying again."]}';
+    }
+    exit;
+}
+
 require_once __DIR__ . '/lib/bootstrap.php';
 require_once __DIR__ . '/lib/content-editor-auth.php';
 
@@ -12,9 +83,6 @@ $currentContent = load_content(true);
 content_editor_start_session();
 content_editor_send_security_headers();
 
-$requestMethod = strtoupper((string) ($_SERVER['REQUEST_METHOD'] ?? 'GET'));
-$contentType = strtolower((string) ($_SERVER['CONTENT_TYPE'] ?? ''));
-$isJsonRequest = str_contains($contentType, 'application/json');
 $authCredentials = content_editor_credentials($currentContent);
 $authAction = $requestMethod === 'POST' ? (string) ($_POST['auth_action'] ?? '') : '';
 $loginError = '';
@@ -59,13 +127,12 @@ if ($authAction === 'login') {
 $isAuthenticated = content_editor_is_authenticated($authCredentials);
 
 if (!$isAuthenticated && $requestMethod === 'POST' && $isJsonRequest) {
-    http_response_code(401);
-    header('Content-Type: application/json; charset=UTF-8');
-    echo json_encode([
+    editor_send_json([
         'ok' => false,
+        'persisted' => false,
+        'logStored' => false,
         'errors' => ['Your editor session expired. Refresh the page and sign in again.'],
-    ], JSON_UNESCAPED_SLASHES);
-    exit;
+    ], 401);
 }
 
 if (!$isAuthenticated) {
@@ -142,13 +209,12 @@ if ($requestMethod === 'POST') {
     }
 
     if (!content_editor_csrf_is_valid($_SERVER['HTTP_X_CSRF_TOKEN'] ?? null)) {
-        http_response_code(403);
-        header('Content-Type: application/json; charset=UTF-8');
-        echo json_encode([
+        editor_send_json([
             'ok' => false,
+            'persisted' => false,
+            'logStored' => false,
             'errors' => ['The security token expired. Refresh the page and try again.'],
-        ], JSON_UNESCAPED_SLASHES);
-        exit;
+        ], 403);
     }
 }
 
@@ -162,6 +228,22 @@ function editor_string_length(string $value): int
 function editor_array(mixed $value): array
 {
     return is_array($value) ? $value : [];
+}
+
+function normalize_editor_content_shape(array $content): array
+{
+    foreach (['tech_stack', 'projects', 'milestones', 'industry_experiences'] as $key) {
+        if (!isset($content[$key]) || !is_array($content[$key])) {
+            $content[$key] = [];
+        }
+    }
+    foreach (['site', 'navigation', 'ui', 'github'] as $key) {
+        if (!isset($content[$key]) || !is_array($content[$key])) {
+            $content[$key] = [];
+        }
+    }
+
+    return $content;
 }
 
 function normalize_editor_tags(mixed $value): array
@@ -361,7 +443,7 @@ function editor_log_scalar(mixed $value): string
     }
     if (is_array($value)) {
         try {
-            return json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            return editor_encode_json($value);
         } catch (JsonException) {
             return '[unavailable value]';
         }
@@ -496,51 +578,220 @@ function editor_log_value(
     return $lines ? implode(PHP_EOL, $lines) : 'No content values changed.';
 }
 
-function append_editor_log(string $path, array $entry): bool
+function editor_write_stream(mixed $handle, string $contents): bool
 {
-    $handle = @fopen($path, 'c+');
-    if ($handle === false) {
+    if (!@rewind($handle) || !@ftruncate($handle, 0)) {
         return false;
     }
 
+    $length = strlen($contents);
+    $offset = 0;
+    while ($offset < $length) {
+        $written = @fwrite($handle, substr($contents, $offset));
+        if ($written === false || $written === 0) {
+            return false;
+        }
+        $offset += $written;
+    }
+
+    return @fflush($handle);
+}
+
+function editor_decode_logs(string $raw): array
+{
+    if (trim($raw) === '') {
+        return [];
+    }
+
+    $decoded = json_decode(
+        $raw,
+        true,
+        512,
+        JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR
+    );
+    if (!is_array($decoded)) {
+        throw new JsonException('The audit log root must be an array.');
+    }
+
+    return $decoded;
+}
+
+function append_editor_log(string $path, array $entry, ?string &$failureReason = null): bool
+{
+    $failureReason = null;
+    $handle = @fopen($path, 'c+');
+    if ($handle === false) {
+        $failureReason = 'The audit log is not writable.';
+        return false;
+    }
+
+    $locked = false;
     try {
-        if (!flock($handle, LOCK_EX)) {
+        $locked = @flock($handle, LOCK_EX);
+        if (!$locked) {
+            $failureReason = 'The audit log could not be locked.';
             return false;
         }
 
-        rewind($handle);
+        @rewind($handle);
         $raw = stream_get_contents($handle);
-        $logs = [];
-        if (is_string($raw) && trim($raw) !== '') {
-            try {
-                $decoded = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
-                $logs = is_array($decoded) ? $decoded : [];
-            } catch (JsonException) {
-                return false;
-            }
+        if (!is_string($raw)) {
+            $failureReason = 'The audit log could not be read.';
+            return false;
+        }
+
+        try {
+            $logs = editor_decode_logs($raw);
+        } catch (JsonException) {
+            $failureReason = 'The audit log contains invalid JSON. Repair logs.json before saving.';
+            return false;
         }
 
         $logs[] = $entry;
-        $encoded = json_encode(
-            $logs,
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
-        ) . PHP_EOL;
-
-        rewind($handle);
-        if (!ftruncate($handle, 0) || fwrite($handle, $encoded) === false || !fflush($handle)) {
+        $encoded = editor_encode_json($logs, true) . PHP_EOL;
+        if (!editor_write_stream($handle, $encoded)) {
+            $failureReason = 'The audit log could not be written safely.';
             return false;
         }
+
         return true;
-    } catch (Throwable) {
+    } catch (Throwable $exception) {
+        error_log('Content editor audit write failed: ' . $exception->getMessage());
+        $failureReason = 'The audit log could not be stored.';
         return false;
     } finally {
-        flock($handle, LOCK_UN);
-        fclose($handle);
+        if ($locked) {
+            @flock($handle, LOCK_UN);
+        }
+        @fclose($handle);
+    }
+}
+
+function persist_editor_save(
+    string $contentPath,
+    string $logsPath,
+    array $expectedContent,
+    array $nextContent,
+    array $logEntry,
+    ?string &$failureReason = null
+): bool {
+    $failureReason = null;
+    $contentHandle = @fopen($contentPath, 'c+');
+    if ($contentHandle === false) {
+        $failureReason = 'The content file is not writable.';
+        return false;
+    }
+
+    $logsHandle = @fopen($logsPath, 'c+');
+    if ($logsHandle === false) {
+        @fclose($contentHandle);
+        $failureReason = 'The audit log is not writable. The content change was not saved.';
+        return false;
+    }
+
+    $contentLocked = false;
+    $logsLocked = false;
+    $originalContent = null;
+    $originalLogs = null;
+    $contentTouched = false;
+    $logsTouched = false;
+
+    try {
+        $contentLocked = @flock($contentHandle, LOCK_EX);
+        if (!$contentLocked) {
+            $failureReason = 'The content file could not be locked.';
+            return false;
+        }
+
+        $logsLocked = @flock($logsHandle, LOCK_EX);
+        if (!$logsLocked) {
+            $failureReason = 'The audit log could not be locked. The content change was not saved.';
+            return false;
+        }
+
+        @rewind($contentHandle);
+        @rewind($logsHandle);
+        $originalContent = stream_get_contents($contentHandle);
+        $originalLogs = stream_get_contents($logsHandle);
+        if (!is_string($originalContent) || !is_string($originalLogs)) {
+            $failureReason = 'The editor data files could not be read safely.';
+            return false;
+        }
+
+        try {
+            $diskContent = json_decode(
+                $originalContent,
+                true,
+                512,
+                JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR
+            );
+        } catch (JsonException) {
+            $failureReason = 'The content file contains invalid JSON. No change was saved.';
+            return false;
+        }
+        if (!is_array($diskContent)) {
+            $failureReason = 'The content file root must be an object. No change was saved.';
+            return false;
+        }
+        if (normalize_editor_content_shape($diskContent) !== $expectedContent) {
+            $failureReason = 'The content changed in another tab or process. Refresh before saving again.';
+            return false;
+        }
+
+        try {
+            $logs = editor_decode_logs($originalLogs);
+        } catch (JsonException) {
+            $failureReason = 'The audit log contains invalid JSON. The content change was not saved.';
+            return false;
+        }
+
+        $logs[] = $logEntry;
+        $encodedContent = editor_encode_json($nextContent, true) . PHP_EOL;
+        $encodedLogs = editor_encode_json($logs, true) . PHP_EOL;
+
+        $contentTouched = true;
+        if (!editor_write_stream($contentHandle, $encodedContent)) {
+            $restored = editor_write_stream($contentHandle, $originalContent);
+            $failureReason = $restored
+                ? 'The content file could not be written safely. The change was rolled back.'
+                : 'The content write failed and rollback could not be confirmed. Refresh before editing again.';
+            return false;
+        }
+
+        $logsTouched = true;
+        if (!editor_write_stream($logsHandle, $encodedLogs)) {
+            $contentRestored = editor_write_stream($contentHandle, $originalContent);
+            $logsRestored = editor_write_stream($logsHandle, $originalLogs);
+            $failureReason = $contentRestored && $logsRestored
+                ? 'The audit log could not be written, so the content change was rolled back.'
+                : 'The audit log failed and rollback could not be confirmed. Refresh before editing again.';
+            return false;
+        }
+
+        return true;
+    } catch (Throwable $exception) {
+        error_log('Content editor transaction failed: ' . $exception->getMessage());
+        $contentRestored = !$contentTouched
+            || (is_string($originalContent) && editor_write_stream($contentHandle, $originalContent));
+        $logsRestored = !$logsTouched
+            || (is_string($originalLogs) && editor_write_stream($logsHandle, $originalLogs));
+        $failureReason = $contentRestored && $logsRestored
+            ? 'The save failed safely and was rolled back.'
+            : 'The save failed and rollback could not be confirmed. Refresh before editing again.';
+        return false;
+    } finally {
+        if ($logsLocked) {
+            @flock($logsHandle, LOCK_UN);
+        }
+        if ($contentLocked) {
+            @flock($contentHandle, LOCK_UN);
+        }
+        @fclose($logsHandle);
+        @fclose($contentHandle);
     }
 }
 
 if ($requestMethod === 'POST') {
-    header('Content-Type: application/json; charset=UTF-8');
     $errors = [];
     $payload = null;
     $nextContent = $currentContent;
@@ -575,32 +826,20 @@ if ($requestMethod === 'POST') {
         ? editor_section_snapshot($nextContent, $section)
         : ['raw_request' => $rawRequest];
 
-    if (!$errors) {
-        try {
-            $encoded = json_encode(
-                $nextContent,
-                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR
-            ) . PHP_EOL;
-            if (file_put_contents($contentPath, $encoded, LOCK_EX) === false) {
-                throw new RuntimeException('Could not write the content file.');
-            }
-        } catch (Throwable $exception) {
-            error_log($exception->getMessage());
-            $errors[] = 'The content file could not be saved safely. No success was reported.';
-        }
-    }
-
     try {
         $logId = bin2hex(random_bytes(8));
     } catch (Throwable) {
         $logId = uniqid('log_', true);
     }
 
+    $timestamp = date(DATE_ATOM);
     $detectedAction = editor_log_action($beforeSnapshot, $afterSnapshot, $section, !$errors);
-    $logAction = $errors ? 'save_failed' : ($submittedOperations ? implode(' + ', $submittedOperations) : $detectedAction);
+    $logAction = $errors
+        ? 'save_failed'
+        : ($submittedOperations ? implode(' + ', $submittedOperations) : $detectedAction);
     $logEntry = [
         'id' => $logId,
-        'timestamp' => date(DATE_ATOM),
+        'timestamp' => $timestamp,
         'status' => $errors ? 'failed' : 'success',
         'section' => $section !== '' ? $section : 'unknown',
         'action' => $logAction,
@@ -614,23 +853,65 @@ if ($requestMethod === 'POST') {
             $errors
         ),
         'errors' => $errors,
-        'before' => $beforeSnapshot,
-        'after' => $afterSnapshot,
+        'item_count_before' => editor_snapshot_count($beforeSnapshot, $section),
+        'item_count_after' => editor_snapshot_count($afterSnapshot, $section),
     ];
-    $logStored = append_editor_log($logsPath, $logEntry);
-    if (!$logStored) {
-        error_log('Content editor log fallback: ' . json_encode($logEntry, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+
+    $persisted = false;
+    $storageFailed = false;
+    $logFailureReason = null;
+    if (!$errors) {
+        $persisted = persist_editor_save(
+            $contentPath,
+            $logsPath,
+            $currentContent,
+            $nextContent,
+            $logEntry,
+            $logFailureReason
+        );
+        $logStored = $persisted;
+
+        if (!$persisted) {
+            $storageFailed = true;
+            $errors[] = $logFailureReason ?: 'The editor files could not be saved safely.';
+            $logEntry['status'] = 'failed';
+            $logEntry['action'] = 'save_failed';
+            $logEntry['value'] = editor_log_value(
+                $beforeSnapshot,
+                $afterSnapshot,
+                $section,
+                false,
+                $submittedOperations,
+                $errors
+            );
+            $logEntry['errors'] = $errors;
+            $logStored = append_editor_log($logsPath, $logEntry, $logFailureReason);
+        }
+    } else {
+        $logStored = append_editor_log($logsPath, $logEntry, $logFailureReason);
     }
 
-    http_response_code($errors ? 422 : 200);
-    echo json_encode([
+    if (!$logStored) {
+        try {
+            error_log('Content editor log fallback: ' . editor_encode_json([
+                'log_error' => $logFailureReason,
+                'entry' => $logEntry,
+            ]));
+        } catch (Throwable $exception) {
+            error_log('Content editor log fallback encoding failed: ' . $exception->getMessage());
+        }
+    }
+
+    $statusCode = $storageFailed ? 500 : ($errors ? 422 : 200);
+    editor_send_json([
         'ok' => !$errors,
+        'persisted' => $persisted,
         'errors' => $errors,
-        'savedAt' => $errors ? null : date(DATE_ATOM),
+        'savedAt' => $persisted ? $timestamp : null,
         'log' => $logEntry,
         'logStored' => $logStored,
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    exit;
+        'logError' => $logStored ? null : $logFailureReason,
+    ], $statusCode);
 }
 
 $content = $currentContent;

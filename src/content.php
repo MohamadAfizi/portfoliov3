@@ -78,10 +78,20 @@ require_once __DIR__ . '/lib/content-editor-auth.php';
 $contentPath = __DIR__ . '/data/content.json';
 $logsPath = __DIR__ . '/data/logs.json';
 $allowedSections = ['site', 'tech_stack', 'projects', 'milestones', 'industry_experiences'];
-$currentContent = load_content(true);
+$contentReadFailure = null;
+$currentContent = load_content(true, $contentReadFailure);
 
 content_editor_start_session();
 content_editor_send_security_headers();
+
+if ($contentReadFailure !== null && $requestMethod === 'POST' && $isJsonRequest) {
+    editor_send_json([
+        'ok' => false,
+        'persisted' => false,
+        'logStored' => false,
+        'errors' => ['The editor content could not be loaded. ' . $contentReadFailure . ' Retry in a moment.'],
+    ], 503);
+}
 
 $authCredentials = content_editor_credentials($currentContent);
 $authAction = $requestMethod === 'POST' ? (string) ($_POST['auth_action'] ?? '') : '';
@@ -137,7 +147,7 @@ if (!$isAuthenticated && $requestMethod === 'POST' && $isJsonRequest) {
 
 if (!$isAuthenticated) {
     $authConfigured = content_editor_auth_is_configured($authCredentials);
-    if (!$authConfigured) {
+    if ($contentReadFailure !== null || !$authConfigured) {
         http_response_code(503);
     } elseif ($loginError !== '') {
         http_response_code(401);
@@ -183,7 +193,9 @@ if (!$isAuthenticated) {
         <label for="loginPassword">Password</label>
         <input id="loginPassword" name="password" type="password" autocomplete="current-password" required>
       </div>
-      <?php if ($loginError !== ''): ?>
+      <?php if ($contentReadFailure !== null): ?>
+        <p class="login-error" role="alert">The editor content is temporarily unavailable. Retry in a moment.</p>
+      <?php elseif ($loginError !== ''): ?>
         <p class="login-error" role="alert"><?= e($loginError) ?></p>
       <?php elseif (!$authConfigured): ?>
         <p class="login-error" role="alert">Add content_editor_auth credentials to src/data/content.json.</p>
@@ -578,6 +590,44 @@ function editor_log_value(
     return $lines ? implode(PHP_EOL, $lines) : 'No content values changed.';
 }
 
+function editor_open_for_update(
+    string $path,
+    string $label,
+    bool $allowCreate,
+    ?string &$failureReason = null
+): mixed {
+    $failureReason = null;
+    if (!$allowCreate && !is_file($path)) {
+        $failureReason = 'The ' . $label . ' is missing.';
+        return false;
+    }
+
+    $lastError = null;
+    for ($attempt = 1; $attempt <= 8; $attempt++) {
+        error_clear_last();
+        $handle = @fopen($path, 'c+b');
+        if ($handle !== false) {
+            return $handle;
+        }
+
+        $lastError = error_get_last();
+        if ($attempt < 8) {
+            usleep(75000);
+        }
+    }
+
+    clearstatcache(true, $path);
+    $writableTarget = is_file($path) ? $path : dirname($path);
+    $failureReason = is_writable($writableTarget)
+        ? 'The ' . $label . ' is temporarily unavailable because another process may be using it. Retry in a moment.'
+        : 'The ' . $label . ' is not writable.';
+    if (is_array($lastError) && isset($lastError['message'])) {
+        error_log('Content editor could not open ' . $path . ': ' . $lastError['message']);
+    }
+
+    return false;
+}
+
 function editor_write_stream(mixed $handle, string $contents): bool
 {
     if (!@rewind($handle) || !@ftruncate($handle, 0)) {
@@ -618,10 +668,8 @@ function editor_decode_logs(string $raw): array
 
 function append_editor_log(string $path, array $entry, ?string &$failureReason = null): bool
 {
-    $failureReason = null;
-    $handle = @fopen($path, 'c+');
+    $handle = editor_open_for_update($path, 'audit log', true, $failureReason);
     if ($handle === false) {
-        $failureReason = 'The audit log is not writable.';
         return false;
     }
 
@@ -675,17 +723,20 @@ function persist_editor_save(
     array $logEntry,
     ?string &$failureReason = null
 ): bool {
-    $failureReason = null;
-    $contentHandle = @fopen($contentPath, 'c+');
+    $contentHandle = editor_open_for_update(
+        $contentPath,
+        'content file',
+        false,
+        $failureReason
+    );
     if ($contentHandle === false) {
-        $failureReason = 'The content file is not writable.';
         return false;
     }
 
-    $logsHandle = @fopen($logsPath, 'c+');
+    $logsHandle = editor_open_for_update($logsPath, 'audit log', true, $failureReason);
     if ($logsHandle === false) {
         @fclose($contentHandle);
-        $failureReason = 'The audit log is not writable. The content change was not saved.';
+        $failureReason = rtrim((string) $failureReason, '.') . '. The content change was not saved.';
         return false;
     }
 

@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/json-helpers.php';
 
-function load_content(bool $includePrivate = false): array
+function load_content(bool $includePrivate = false, ?string &$failureReason = null): array
 {
-    $content = read_json_file(__DIR__ . '/../data/content.json');
+    $content = read_json_file(__DIR__ . '/../data/content.json', $failureReason);
 
     if (!$includePrivate) {
         unset($content['content_editor_auth']);

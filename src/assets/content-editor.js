@@ -975,8 +975,6 @@
       newGroup.focus();
       return;
     }
-    const singular = activeDialogSection === 'projects' ? 'project' : 'milestone';
-    if (!await confirmAddition(`this ${singular} in "${group}"`)) return;
     state[activeDialogSection].unshift({
       title: '',
       group,

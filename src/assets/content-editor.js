@@ -367,32 +367,75 @@
   }
 
   function confirmRemoval(label) {
-    return confirmDialog(`Delete ${label}?`, 'This change is permanent after you save the section.', 'Delete', true);
+    return confirmDialog(`Delete ${label}?`, 'This item will be removed from the editor. Save to make the deletion live.', 'Delete', true);
   }
 
   function confirmAddition(label) {
-    return confirmDialog(`Add ${label}?`, 'You will still need to save the section.', 'Add');
+    return confirmDialog(`Add ${label}?`, `Are you sure you want to add ${label}?`, 'Add');
   }
 
   async function confirmDialog(title, text, confirmButtonText, isDanger = false) {
-    if (!window.Swal) {
+    const dialog = document.getElementById('confirmDialog');
+    if (!dialog || typeof dialog.showModal !== 'function') {
       return window.confirm(`${title}\n\n${text}`);
     }
-    const nativeDialog = document.getElementById('addEntryDialog');
-    if (nativeDialog?.open) {
-      nativeDialog.close();
-      activeDialogSection = '';
-    }
-    const result = await window.Swal.fire({
-      title,
-      text,
-      icon: isDanger ? 'warning' : 'question',
-      showCancelButton: true,
-      confirmButtonText,
-      cancelButtonText: 'Cancel',
-      confirmButtonColor: isDanger ? '#b33a33' : '#305f8f',
+
+    const titleElement = document.getElementById('confirmDialogTitle');
+    const textElement = document.getElementById('confirmDialogText');
+    const kickerElement = document.getElementById('confirmDialogKicker');
+    const acceptButton = document.getElementById('acceptConfirmDialog');
+    const cancelButton = document.getElementById('cancelConfirmDialog');
+    const closeButton = document.getElementById('closeConfirmDialog');
+    const form = document.getElementById('confirmDialogForm');
+
+    titleElement.textContent = title;
+    textElement.textContent = text;
+    kickerElement.textContent = isDanger ? 'Danger zone' : 'Confirm action';
+    acceptButton.textContent = confirmButtonText;
+    acceptButton.classList.toggle('button-danger', isDanger);
+    acceptButton.classList.toggle('button-primary', !isDanger);
+    dialog.classList.toggle('is-danger', isDanger);
+
+    return new Promise((resolve) => {
+      let resolved = false;
+      const finish = (value) => {
+        if (resolved) return;
+        resolved = true;
+        cleanup();
+        if (dialog.open) dialog.close();
+        resolve(value);
+      };
+      const cleanup = () => {
+        form.removeEventListener('submit', onSubmit);
+        cancelButton.removeEventListener('click', onCancel);
+        closeButton.removeEventListener('click', onCancel);
+        dialog.removeEventListener('click', onBackdropClick);
+        dialog.removeEventListener('cancel', onDialogCancel);
+        dialog.removeEventListener('close', onDialogClose);
+      };
+      const onSubmit = (event) => {
+        event.preventDefault();
+        finish(true);
+      };
+      const onCancel = () => finish(false);
+      const onDialogCancel = (event) => {
+        event.preventDefault();
+        finish(false);
+      };
+      const onDialogClose = () => finish(false);
+      const onBackdropClick = (event) => {
+        if (event.target === event.currentTarget) finish(false);
+      };
+
+      form.addEventListener('submit', onSubmit);
+      cancelButton.addEventListener('click', onCancel);
+      closeButton.addEventListener('click', onCancel);
+      dialog.addEventListener('click', onBackdropClick);
+      dialog.addEventListener('cancel', onDialogCancel);
+      dialog.addEventListener('close', onDialogClose);
+      dialog.showModal();
+      acceptButton.focus();
     });
-    return Boolean(result.isConfirmed);
   }
 
   function swapItems(items, firstIndex, secondIndex) {

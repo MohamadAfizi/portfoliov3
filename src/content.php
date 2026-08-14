@@ -987,7 +987,6 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500;600;700&amp;display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link rel="stylesheet" href="assets/content-editor.css?v=<?= filemtime(__DIR__ . '/assets/content-editor.css') ?>">
 </head>
 <body>
@@ -1194,6 +1193,22 @@ $roleCount = count(editor_array($industry['roles'] ?? null));
     <footer>
       <button class="button" type="button" id="cancelEntryDialog">Cancel</button>
       <button class="button button-primary" type="submit" id="confirmEntryAdd">Add record</button>
+    </footer>
+  </form>
+</dialog>
+
+<dialog class="confirm-dialog" id="confirmDialog">
+  <form id="confirmDialogForm" method="dialog">
+    <header>
+      <div><span class="eyebrow" id="confirmDialogKicker">Confirm action</span><h2 id="confirmDialogTitle">Confirm</h2></div>
+      <button class="icon-button" type="button" id="closeConfirmDialog" aria-label="Close dialog">x</button>
+    </header>
+    <div class="dialog-content">
+      <p id="confirmDialogText"></p>
+    </div>
+    <footer>
+      <button class="button" type="button" id="cancelConfirmDialog">Cancel</button>
+      <button class="button button-primary" type="submit" id="acceptConfirmDialog">Confirm</button>
     </footer>
   </form>
 </dialog>

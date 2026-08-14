@@ -378,6 +378,11 @@
     if (!window.Swal) {
       return window.confirm(`${title}\n\n${text}`);
     }
+    const nativeDialog = document.getElementById('addEntryDialog');
+    if (nativeDialog?.open) {
+      nativeDialog.close();
+      activeDialogSection = '';
+    }
     const result = await window.Swal.fire({
       title,
       text,

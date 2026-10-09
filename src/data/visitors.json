@@ -454,5 +454,53 @@
         "referrer": "http://127.0.0.1:8082/",
         "ip": "127.0.0.0",
         "location": []
+    },
+    {
+        "time": "2026-10-09T17:43:19+00:00",
+        "path": "/api/track-visitor.php",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.141.0 Chrome/150.0.7871.250 Electron/43.7.7 Safari/537.36",
+        "referrer": "http://localhost:8000/",
+        "ip": "::",
+        "location": []
+    },
+    {
+        "time": "2026-10-09T17:43:27+00:00",
+        "path": "/api/track-visitor.php",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "referrer": "http://localhost:8000/",
+        "ip": "::",
+        "location": []
+    },
+    {
+        "time": "2026-10-09T18:04:52+00:00",
+        "path": "/api/track-visitor.php",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "referrer": "http://localhost:8000/",
+        "ip": "::",
+        "location": []
+    },
+    {
+        "time": "2026-10-09T18:10:35+00:00",
+        "path": "/api/track-visitor.php",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.141.0 Chrome/150.0.7871.250 Electron/43.7.7 Safari/537.36",
+        "referrer": "http://localhost:8000/",
+        "ip": "::",
+        "location": []
+    },
+    {
+        "time": "2026-10-09T18:44:52+00:00",
+        "path": "/api/track-visitor.php",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+        "referrer": "http://localhost:8000/",
+        "ip": "::",
+        "location": []
+    },
+    {
+        "time": "2026-10-09T18:45:45+00:00",
+        "path": "/api/track-visitor.php",
+        "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Code/1.141.0 Chrome/150.0.7871.250 Electron/43.7.7 Safari/537.36",
+        "referrer": "http://localhost:8000/",
+        "ip": "::",
+        "location": []
     }
 ]

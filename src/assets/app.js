@@ -748,17 +748,17 @@ document.addEventListener('DOMContentLoaded', function() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      layout: { padding: { top: 18, bottom: 6 } },
+      layout: { padding: { top: 18, bottom: 6, left: 12, right: 12 } },
       scales: {
         y: {
           beginAtZero: true,
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#888', precision: 0, stepSize: 1, grace: '25%' }
+          grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+          ticks: { color: 'transparent', precision: 0, stepSize: 1, grace: '25%', maxTicksLimit: 3, font: { size: 10 } }
         },
-        x: { grid: { display: false }, ticks: { color: '#888' } }
+        x: { grid: { display: false }, ticks: { color: '#888', font: { size: 10 } } }
       },
       plugins: {
-        dataLabelPlugin: { enabled: true, position: 'top', color: '#ffffff', font: "12px 'JetBrains Mono', monospace" },
+        dataLabelPlugin: { enabled: true, position: 'top', color: '#ffffff', font: "10px 'JetBrains Mono', monospace" },
         legend: { display: false },
         tooltip: {
           backgroundColor: 'rgba(0,0,0,0.8)',
@@ -786,11 +786,25 @@ document.addEventListener('DOMContentLoaded', function() {
     analyticsSliderTitle.textContent = text;
   }
 
-  ensureVisitorAnalytics();
-  chartCanvas.classList.add('is-active');
-  chartCanvas.removeAttribute('hidden');
+  function initChartOnScroll() {
+    if (analyticsChart) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          ensureVisitorAnalytics();
+          chartCanvas.classList.add('is-active');
+          chartCanvas.removeAttribute('hidden');
+          updateAnalyticsTitle(uiText.visitor_analytics_title || '', false);
+          if (analyticsChart) analyticsChart.resize();
+          observer.disconnect();
+        }
+      });
+    }, { rootMargin: '100px' });
+    observer.observe(chartCanvas);
+  }
+
+  initChartOnScroll();
   updateAnalyticsTitle(uiText.visitor_analytics_title || '', false);
-  if (analyticsChart) analyticsChart.resize();
 
   // Future second analytics chart:
   // Add the next small, dynamic chart here once we have a better data source

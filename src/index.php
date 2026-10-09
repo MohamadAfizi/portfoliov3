@@ -36,11 +36,11 @@ $site = $content['site'];
     <div class="intro">
 <?php
 include __DIR__ . '/sections/hero.php';
-include __DIR__ . '/sections/analytics.php';
 include __DIR__ . '/sections/projects.php';
 include __DIR__ . '/sections/milestones.php';
 include __DIR__ . '/sections/industry-experiences.php';
 include __DIR__ . '/sections/portfolio.php';
+include __DIR__ . '/sections/analytics.php';
 ?>
 
 <div id="readmeModal" class="modal" aria-hidden="true">

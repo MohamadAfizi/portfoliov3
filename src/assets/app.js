@@ -251,8 +251,14 @@ document.addEventListener('DOMContentLoaded', function() {
         achievementSection.setAttribute('aria-labelledby', 'industryAchievementsTitle');
 
         const achievementCommand = document.createElement('p');
-        achievementCommand.className = 'industry-command';
-        achievementCommand.textContent = '$ career-impact --selected';
+        achievementCommand.className = 'terminal-command industry-command';
+        const achievementPrompt = document.createElement('span');
+        achievementPrompt.className = 'terminal-prompt';
+        achievementPrompt.textContent = 'afizi@portfolio:~$';
+        achievementCommand.appendChild(achievementPrompt);
+        const achievementCommandText = document.createElement('span');
+        achievementCommandText.textContent = 'cat career-highlights.txt';
+        achievementCommand.appendChild(achievementCommandText);
         achievementSection.appendChild(achievementCommand);
 
         const achievementHeading = document.createElement('h3');

@@ -5,14 +5,14 @@
     },
     "site":  {
                  "language":  "en",
-                 "title":  "Mohamad Afizi\u0027s Portfolio Website",
+                 "title":  "Mohamad Afizi | Full Stack Web Developer",
                  "name":  "MOHAMAD AFIZI",
                  "role":  "Full Stack Web Developer",
                  "location":  "Kuala Lumpur, Malaysia",
                  "email":  "fizzyjamal@gmail.com",
                  "terminal_prompt":  "afizi@portfolio:~$",
                  "hero_command":  "whoami",
-                 "summary_command":  "curl professional-summary.txt",
+                 "summary_command":  "cat professional-summary.txt",
                  "favicon":  "../../shared/media/images/dp.png",
                  "footer":  "Build by Mohamad Afizi. Self-hosted. Self-made. 2026"
              },
@@ -27,7 +27,7 @@
                                       },
                        "industry_experiences":  {
                                                     "label":  "./industry-experiences",
-                                                    "description":  "Real-world contributions from my time in the industry — practical tasks, problem-solving, and hands-on experience across different roles and environments."
+                                                    "description":  "The roles that shaped how I build systems."
                                                 }
                    },
     "ui":  {

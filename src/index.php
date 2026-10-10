@@ -13,13 +13,13 @@ $site = $content['site'];
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><?= e($site['title'] ?? 'Portfolio') ?></title>
+<title><?= e($site['title'] ?? 'Mohamad Afizi | Full Stack Web Developer') ?></title>
 <?php if (!empty($site['description'])): ?>
 <meta name="description" content="<?= e($site['description']) ?>">
 <?php endif; ?>
-<?php if (!empty($site['favicon'])): ?>
-<link rel="icon" type="image/png" href="<?= e($site['favicon']) ?>">
-<?php endif; ?>
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico?v=2" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

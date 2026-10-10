@@ -105,7 +105,7 @@ section.nav {
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 0;
-  margin-bottom: var(--space-4xl);
+  margin-bottom: 27px;
   padding-top: 0;
   justify-content: flex-start;
 }
@@ -417,8 +417,6 @@ section.nav {
 
 .industry-timeline .industry-command {
   margin: 0;
-  color: var(--terminal-cyan);
-  font-size: 0.7rem;
 }
 
 .industry-achievements > h3 {

@@ -55,16 +55,16 @@ section.nav {
 .intro h2 {
   font-size: 13px;
   color: #aaa;
-  margin-top: var(--space-sm);
+  margin-top: 2px;
   margin-bottom: var(--space-sm);
   font-weight: 400;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .intro .profile-summary {
   font-size: 13px;
   line-height: 1.6;
-  margin-bottom: var(--space-2xl);
+  margin-bottom: 6px;
   text-align: justify;
   text-justify: inter-word;
   word-spacing: normal;
@@ -106,6 +106,7 @@ section.nav {
   gap: 6px;
   margin-top: 0;
   margin-bottom: var(--space-4xl);
+  padding-top: 0;
   justify-content: flex-start;
 }
 
@@ -136,7 +137,7 @@ section.nav {
   margin: 0;
   font-family: var(--terminal-font);
   font-size: clamp(2.4rem, 4vw, 3.4rem);
-  line-height: 1.1;
+  line-height: 1;
   letter-spacing: 0vw;
   text-align: left;
   color: white;
@@ -173,7 +174,7 @@ section.nav {
 }
 
 .chart-container {
-  margin-top: var(--space-5xl);
+  margin-top: 0;
   margin-bottom: 0;
   margin-left: auto;
   margin-right: auto;
@@ -182,7 +183,6 @@ section.nav {
   padding-left: 20px;
   padding-right: 20px;
   max-width: 1200px;
-  border-top: 1px solid var(--terminal-border);
   box-sizing: border-box;
 }
 

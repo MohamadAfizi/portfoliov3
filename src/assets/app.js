@@ -76,8 +76,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let categoriesData = {};
 
     function setActiveNavLink(linkElement) {
-        navLinks.forEach(link => link.classList.remove('active'));
+        navLinks.forEach(link => {
+          link.classList.remove('active');
+          link.removeAttribute('aria-current');
+        });
         linkElement.classList.add('active');
+        linkElement.setAttribute('aria-current', 'page');
     }
 
     const itemsPerPage = 6;
@@ -366,11 +370,15 @@ document.addEventListener('DOMContentLoaded', function() {
       industryTimeline.appendChild(roles);
     }
 
+    let categoryDescriptionTimeout = null;
     function updateCategoryPresentation(category) {
       const descElement = document.getElementById('categoryDescription');
       if (descElement) {
+        if (categoryDescriptionTimeout !== null) {
+          clearTimeout(categoryDescriptionTimeout);
+        }
         descElement.classList.remove('active');
-        setTimeout(() => {
+        categoryDescriptionTimeout = setTimeout(() => {
           descElement.textContent = categoryDescriptions[category] || '';
           descElement.classList.add('active');
         }, 150);
@@ -394,10 +402,23 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
+      const cardsWereHidden = Boolean(cardsWrapper && cardsWrapper.hidden);
       if (cardsWrapper) cardsWrapper.hidden = false;
       if (industryTimeline) {
         industryTimeline.hidden = true;
         industryTimeline.classList.remove('animate');
+      }
+
+      if (cardsWereHidden) {
+        updateCardContent(category);
+        cardsWrapper.hidden = false;
+        cards.forEach(card => card.classList.remove('animate', 'exit'));
+        requestAnimationFrame(() => {
+          cards.forEach((card, index) => {
+            setTimeout(() => card.classList.add('animate'), index * 100);
+          });
+        });
+        return;
       }
 
       cards.forEach((card, index) => {
@@ -412,17 +433,39 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 600);
     }
 
+    function activateCategory(category) {
+      const link = Array.from(navLinks).find(navLink => navLink.dataset.category === category);
+      if (!link) return;
+      setActiveNavLink(link);
+      activeGroupPerCategory[category] = null;
+      pagesState[category] = 0;
+      updateCategoryPresentation(category);
+      animateCards(category);
+    }
+
     navLinks.forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
-        setActiveNavLink(e.currentTarget);
         const category = e.currentTarget.dataset.category;
-        activeGroupPerCategory[category] = null;
-        pagesState[category] = 0;
-        updateCategoryPresentation(category);
-        animateCards(category);
+        if (window.location.hash !== e.currentTarget.hash) {
+          window.history.pushState(null, '', e.currentTarget.hash);
+        }
+        lastHandledHash = window.location.hash;
+        activateCategory(category);
       });
     });
+
+    let lastHandledHash = null;
+    function activateCategoryFromHash() {
+      const hash = window.location.hash;
+      if (hash === lastHandledHash) return;
+      lastHandledHash = hash;
+      const category = hash.slice(1);
+      activateCategory(categoryConfig[category] ? category : 'industry_experiences');
+    }
+
+    window.addEventListener('popstate', activateCategoryFromHash);
+    window.addEventListener('hashchange', activateCategoryFromHash);
 
     const prevBtn = document.getElementById('cardsPrev');
     const nextBtn = document.getElementById('cardsNext');
@@ -439,11 +482,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (pagesState[category] < getTotalPages(category) - 1) { pagesState[category] += 1; animateCards(category); }
     });
 
-    ensureCategoryState('projects');
-    updateCategoryPresentation('projects');
-    animateCards('projects');
-    const initialLink = document.querySelector('.nav-links a[data-category="projects"]') || navLinks[0];
-    if (initialLink) setActiveNavLink(initialLink);
+    Object.keys(categoryConfig).forEach(ensureCategoryState);
+    activateCategoryFromHash();
     }
 
     // Start loading and initialization
@@ -654,7 +694,7 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
   const analyticsSliderTitle = document.getElementById('analyticsSliderTitle');
   const chartCanvas = document.getElementById('visitorAnalyticsChart');
-  if (!analyticsSliderTitle || !chartCanvas) return;
+  if (!chartCanvas) return;
 
   const analyticsData = portfolioData.analytics || {};
   const visitorData = analyticsData.visitors || { labels: [], values: [] };

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/lib/bootstrap.php';
 
+$show_analytics = false;
 $content = load_content();
 $visitorAnalytics = visitor_analytics();
 $portfolioCategories = [];
@@ -26,7 +27,9 @@ $site = $content['site'];
 <link rel="stylesheet" href="assets/styles.css?v=<?= filemtime(__DIR__ . '/assets/styles.css') ?>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+<?php if ($show_analytics): ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<?php endif; ?>
 <script src="https://cdn.jsdelivr.net/npm/baffle@0.3.6/dist/baffle.min.js"></script>
 </head>
 <body>
@@ -36,11 +39,13 @@ $site = $content['site'];
     <div class="intro">
 <?php
 include __DIR__ . '/sections/hero.php';
+include __DIR__ . '/sections/industry-experiences.php';
 include __DIR__ . '/sections/projects.php';
 include __DIR__ . '/sections/milestones.php';
-include __DIR__ . '/sections/industry-experiences.php';
 include __DIR__ . '/sections/portfolio.php';
-include __DIR__ . '/sections/analytics.php';
+if ($show_analytics) {
+    include __DIR__ . '/sections/analytics.php';
+}
 ?>
 
 <div id="readmeModal" class="modal" aria-hidden="true">

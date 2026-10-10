@@ -7,7 +7,7 @@
                  "language":  "en",
                  "title":  "Mohamad Afizi\u0027s Portfolio Website",
                  "name":  "MOHAMAD AFIZI",
-                 "role":  "Full Stack Developer",
+                 "role":  "Full Stack Web Developer",
                  "location":  "Kuala Lumpur, Malaysia",
                  "email":  "fizzyjamal@gmail.com",
                  "terminal_prompt":  "afizi@portfolio:~$",
@@ -49,7 +49,7 @@
                    "contribution_plural":  "contributions",
                    "on_label":  "on"
                },
-    "profile_summary":  "Assalamualaikum. I\u0027m Mohamad Afizi, a full-stack developer based in Kuala Lumpur building production systems with PHP, Laravel, and SQL Server by day, and expanding into cloud infrastructure, data engineering, and modern JavaScript frameworks on my own time.",
+    "profile_summary":  "Assalamualaikum. Full-stack web developer with 3+ years in tech, following 8 years in business operations. I build systems around how work actually happens, with freelance and self-hosted projects on the side.",
     "tech_stack":  [
                        "AJAX",
                        "Apache Server",

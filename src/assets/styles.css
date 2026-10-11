@@ -549,6 +549,19 @@ section.nav {
   list-style: none;
 }
 
+.timeline-positions > li:has(> .timeline-scope) {
+  margin-bottom: 8px;
+}
+
+.timeline-positions > li > .timeline-scope {
+  margin-top: 2px;
+  padding-left: 12px;
+  max-width: none;
+  color: #a7b0bb;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
 .industry-timeline .timeline-position-line {
   display: flex;
   align-items: baseline;

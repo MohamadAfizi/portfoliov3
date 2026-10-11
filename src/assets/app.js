@@ -342,6 +342,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             item.appendChild(line);
+            if (position.description) {
+              const description = document.createElement('p');
+              description.className = 'timeline-scope';
+              description.textContent = position.description;
+              item.appendChild(description);
+            }
             positionList.appendChild(item);
           });
 

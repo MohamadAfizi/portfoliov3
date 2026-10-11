@@ -360,16 +360,6 @@ document.addEventListener('DOMContentLoaded', function() {
           role.appendChild(scope);
         }
 
-        const skills = Array.isArray(experience.skills) ? experience.skills.filter(Boolean) : [];
-        if (skills.length > 0) {
-          const skillList = document.createElement('div');
-          skillList.className = 'timeline-skills';
-          skills.forEach((skill, skillIndex) => {
-            skillList.appendChild(createSkillTag(skill, skillIndex));
-          });
-          role.appendChild(skillList);
-        }
-
         roles.appendChild(role);
       });
 
@@ -453,10 +443,12 @@ document.addEventListener('DOMContentLoaded', function() {
       link.addEventListener('click', (e) => {
         e.preventDefault();
         const category = e.currentTarget.dataset.category;
-        if (window.location.hash !== e.currentTarget.hash) {
-          window.history.pushState(null, '', e.currentTarget.hash);
+        const nextUrl = new URL(window.location.href);
+        nextUrl.hash = category === 'industry_experiences' ? '' : category;
+        if (nextUrl.href !== window.location.href) {
+          window.history.replaceState(null, '', `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
         }
-        lastHandledHash = window.location.hash;
+        lastHandledHash = nextUrl.hash;
         activateCategory(category);
       });
     });
@@ -464,10 +456,14 @@ document.addEventListener('DOMContentLoaded', function() {
     let lastHandledHash = null;
     function activateCategoryFromHash() {
       const hash = window.location.hash;
-      if (hash === lastHandledHash) return;
+      if (hash === lastHandledHash && hash !== '#industry_experiences') return;
       lastHandledHash = hash;
       const category = hash.slice(1);
       activateCategory(categoryConfig[category] ? category : 'industry_experiences');
+      if (hash === '#industry_experiences') {
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+        lastHandledHash = '';
+      }
     }
 
     window.addEventListener('popstate', activateCategoryFromHash);

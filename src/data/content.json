@@ -887,96 +887,111 @@
                        }
                    ],
     "industry_experiences":  {
-                                 "keyAchievements":  [
-                                                         {
-                                                             "title":  "Production System Delivery",
-                                                             "summary":  "Delivered internal web systems that improved operational visibility, reduced manual processing, and supported daily business workflows."
-                                                         },
-                                                         {
-                                                             "title":  "Automation and Reporting",
-                                                             "summary":  "Built reporting and automation features that turned repeated manual checks into faster, more reliable workflows."
-                                                         },
-                                                         {
-                                                             "title":  "Infrastructure Ownership",
-                                                             "summary":  "Managed self-hosted systems and application infrastructure end to end, from server setup to deployment and maintenance."
-                                                         }
-                                                     ],
-                                 "roles":  [
-                                               {
-                                                   "from":  "Dec 2024",
-                                                   "to":  "Present",
-                                                   "role":  "Application Analyst and Developer",
-                                                   "scope":  "Building and maintaining internal business applications, reporting tools, and workflow automation across active production systems.",
-                                                   "skills":  [
-                                                                  "PHP",
-                                                                  "Laravel",
-                                                                  "SQL Server",
-                                                                  "AJAX",
-                                                                  "Bootstrap"
-                                                              ],
-                                                   "current":  true
-                                               },
-                                               {
-                                                   "from":  "Jan 2023",
-                                                   "to":  "Nov 2024",
-                                                   "role":  "Web and Systems Developer",
-                                                   "scope":  "Supported business applications, data handling, and interface improvements with a focus on practical system delivery and steady maintenance.",
-                                                   "skills":  [
-                                                                  "Web Development",
-                                                                  "Database Management",
-                                                                  "Process Automation"
-                                                              ],
-                                                   "current":  false
-                                               },
-                                               {
-                                                   "from":  "Jan 2021",
-                                                   "to":  "Dec 2022",
-                                                   "role":  "Past Experience B",
-                                                   "scope":  "Handled reporting, support tasks, and system administration work while strengthening practical experience with operational systems.",
-                                                   "skills":  [
-                                                                  "Data Analysis",
-                                                                  "Reporting",
-                                                                  "System Administration"
-                                                              ],
-                                                   "current":  false
-                                               },
-                                               {
-                                                   "from":  "Jan 2015",
-                                                   "to":  "Dec 2019",
-                                                   "role":  "Earlier Career C",
-                                                   "scope":  "Roles spanning immigration consulting, HR operations, payroll administration, and records management that built the operational foundation behind later systems work.",
-                                                   "skills":  [
+    "keyAchievements":  [
+                            {
+                                "title":  "Production System Delivery",
+                                "summary":  "Delivered internal web systems that improved operational visibility, reduced manual processing, and supported daily business workflows."
+                            },
+                            {
+                                "title":  "Automation and Reporting",
+                                "summary":  "Built reporting and automation features that turned repeated manual checks into faster, more reliable workflows."
+                            },
+                            {
+                                "title":  "Infrastructure Ownership",
+                                "summary":  "Managed self-hosted systems and application infrastructure end to end, from server setup to deployment and maintenance."
+                            }
+                        ],
+    "roles":  [
+                  {
+                      "from":  "May 2026",
+                      "to":  "Present",
+                      "role":  "Executive, Web Engineer",
+                      "scope":  "[Placeholder] One line on what you build and own in this role.",
+                      "skills":  [
+                                     "PHP",
+                                     "Laravel",
+                                     "SQL Server",
+                                     "AJAX",
+                                     "Bootstrap"
+                                 ],
+                      "current":  true
+                  },
+                  {
+                      "from":  "Dec 2024",
+                      "to":  "Apr 2026",
+                      "role":  "Application Analyst \u0026 Developer",
+                      "scope":  "Building and maintaining internal business applications, reporting tools, and workflow automation across active production systems.",
+                      "skills":  [
+                                     "Web Development",
+                                     "Database Management",
+                                     "Process Automation"
+                                 ],
+                      "current":  false
+                  },
+                  {
+                      "from":  "May 2024",
+                      "to":  "Present",
+                      "role":  "Independent Developer",
+                      "scope":  "[Placeholder] One line on freelance and personal builds.",
+                      "skills":  [
+                                     "Data Analysis",
+                                     "Reporting",
+                                     "System Administration"
+                                 ],
+                      "current":  false
+                  },
+                  {
+                      "from":  "June 2023",
+                      "to":  "June 2024",
+                      "role":  "Database Support Officer",
+                      "scope":  "[Placeholder] One line on what you supported and fixed.",
+                      "skills":  [
 
-                                                              ],
-                                                   "current":  false,
-                                                   "positions":  [
-                                                                     {
-                                                                         "role":  "HR Operations Executive",
-                                                                         "from":  "Jul 2019",
-                                                                         "to":  "Dec 2019"
-                                                                     },
-                                                                     {
-                                                                         "role":  "Administrative Assistant (Grade N19)",
-                                                                         "from":  "May 2018",
-                                                                         "to":  "June 2019"
-                                                                     },
-                                                                     {
-                                                                         "role":  "ESD Consultant",
-                                                                         "from":  "Nov 2017",
-                                                                         "to":  "Apr 2018"
-                                                                     },
-                                                                     {
-                                                                         "role":  "Visa \u0026 Immigration Consultant",
-                                                                         "from":  "Feb 2016",
-                                                                         "to":  "Oct 2017"
-                                                                     },
-                                                                     {
-                                                                         "role":  "Operation Assistant",
-                                                                         "from":  "Jan 2015",
-                                                                         "to":  "Jan 2016"
-                                                                     }
-                                                                 ]
-                                               }
-                                           ]
-                             }
+                                 ],
+                      "current":  false
+                  },
+                  {
+                      "from":  "Jan 2015",
+                      "to":  "May 2023",
+                      "role":  "Earlier Career",
+                      "scope":  "Roles spanning immigration consulting, HR operations, payroll administration, and records management that built the operational foundation behind later systems work.",
+                      "skills":  [
+
+                                 ],
+                      "current":  false,
+                      "positions":  [
+                                        {
+                                            "role":  "Operations Executive",
+                                            "from":  "Jan 2020",
+                                            "to":  "May 2023"
+                                        },
+                                        {
+                                            "role":  "HR Operations Executive",
+                                            "from":  "July 2019",
+                                            "to":  "Dec 2019"
+                                        },
+                                        {
+                                            "role":  "Administrative Assistant (Grade N19)",
+                                            "from":  "May 2018",
+                                            "to":  "June 2019"
+                                        },
+                                        {
+                                            "role":  "ESD Consultant",
+                                            "from":  "Nov 2017",
+                                            "to":  "Apr 2018"
+                                        },
+                                        {
+                                            "role":  "Visa \u0026 Immigration Consultant",
+                                            "from":  "Feb 2016",
+                                            "to":  "Oct 2017"
+                                        },
+                                        {
+                                            "role":  "Operation Assistant",
+                                            "from":  "Jan 2015",
+                                            "to":  "Jan 2016"
+                                        }
+                                    ]
+                  }
+              ]
+}
 }

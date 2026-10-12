@@ -16,14 +16,14 @@ $pageData = [
 ?>
 <nav class="nav-links" aria-label="Portfolio categories">
 <?php foreach ($portfolioCategories as $key => $category): ?>
-  <a href="#<?= e($key) ?>" data-category="<?= e($key) ?>"><?= e($category['label']) ?></a>
+  <a href="#<?= e($key) ?>" data-category="<?= e($key) ?>"<?= $key === 'industry_experiences' ? ' class="active" aria-current="page"' : '' ?>><?= e($category['label']) ?></a>
 <?php endforeach; ?>
 </nav>
 
 <div id="categoryDescription" class="category-description active"><?= e($initialDescription) ?></div>
 <div id="groupingFilter" class="grouping-filter"></div>
 
-<div class="cards-wrapper">
+<div class="cards-wrapper" hidden>
   <div class="cards-grid">
 <?php for ($index = 0; $index < 6; $index++): ?>
     <div class="card">

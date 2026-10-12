@@ -5,29 +5,29 @@
     },
     "site":  {
                  "language":  "en",
-                 "title":  "Mohamad Afizi\u0027s Portfolio Website",
+                 "title":  "Mohamad Afizi | Full Stack Web Developer",
                  "name":  "MOHAMAD AFIZI",
-                 "role":  "Full Stack Developer",
+                 "role":  "Full Stack Web Developer",
                  "location":  "Kuala Lumpur, Malaysia",
                  "email":  "fizzyjamal@gmail.com",
                  "terminal_prompt":  "afizi@portfolio:~$",
                  "hero_command":  "whoami",
-                 "summary_command":  "curl professional-summary.txt",
+                 "summary_command":  "cat professional-summary.txt",
                  "favicon":  "../../shared/media/images/dp.png",
                  "footer":  "Build by Mohamad Afizi. Self-hosted. Self-made. 2026"
              },
     "navigation":  {
                        "projects":  {
                                         "label":  "./projects",
-                                        "description":  "A range of projects across independent builds, technical experiments, and guided learning — showcasing how I think, solve, and execute."
+                                        "description":  "Independent builds, technical experiments, and coursework: what I've built and learned along the way."
                                     },
                        "milestones":  {
                                           "label":  "./milestones",
-                                          "description":  "Certifications, courses, and structured learning milestones that reflect my commitment to continuous improvement"
+                                          "description":  "Certifications and courses that built my skills."
                                       },
                        "industry_experiences":  {
                                                     "label":  "./industry-experiences",
-                                                    "description":  "Real-world contributions from my time in the industry — practical tasks, problem-solving, and hands-on experience across different roles and environments."
+                                                    "description":  "The roles that shaped how I build systems."
                                                 }
                    },
     "ui":  {
@@ -49,7 +49,7 @@
                    "contribution_plural":  "contributions",
                    "on_label":  "on"
                },
-    "profile_summary":  "Assalamualaikum. I\u0027m Mohamad Afizi, a full-stack developer based in Kuala Lumpur building production systems with PHP, Laravel, and SQL Server by day, and expanding into cloud infrastructure, data engineering, and modern JavaScript frameworks on my own time.",
+    "profile_summary":  "Assalamualaikum. Full-stack web developer with 3+ years in tech, following 8 years in business operations. I build systems around how work actually happens, with freelance and self-hosted projects on the side.",
     "tech_stack":  [
                        "AJAX",
                        "Apache Server",
@@ -887,96 +887,113 @@
                        }
                    ],
     "industry_experiences":  {
-                                 "keyAchievements":  [
-                                                         {
-                                                             "title":  "Production System Delivery",
-                                                             "summary":  "Delivered internal web systems that improved operational visibility, reduced manual processing, and supported daily business workflows."
-                                                         },
-                                                         {
-                                                             "title":  "Automation and Reporting",
-                                                             "summary":  "Built reporting and automation features that turned repeated manual checks into faster, more reliable workflows."
-                                                         },
-                                                         {
-                                                             "title":  "Infrastructure Ownership",
-                                                             "summary":  "Managed self-hosted systems and application infrastructure end to end, from server setup to deployment and maintenance."
-                                                         }
-                                                     ],
-                                 "roles":  [
-                                               {
-                                                   "from":  "Dec 2024",
-                                                   "to":  "Present",
-                                                   "role":  "Application Analyst and Developer",
-                                                   "scope":  "Building and maintaining internal business applications, reporting tools, and workflow automation across active production systems.",
-                                                   "skills":  [
-                                                                  "PHP",
-                                                                  "Laravel",
-                                                                  "SQL Server",
-                                                                  "AJAX",
-                                                                  "Bootstrap"
-                                                              ],
-                                                   "current":  true
-                                               },
-                                               {
-                                                   "from":  "Jan 2023",
-                                                   "to":  "Nov 2024",
-                                                   "role":  "Web and Systems Developer",
-                                                   "scope":  "Supported business applications, data handling, and interface improvements with a focus on practical system delivery and steady maintenance.",
-                                                   "skills":  [
-                                                                  "Web Development",
-                                                                  "Database Management",
-                                                                  "Process Automation"
-                                                              ],
-                                                   "current":  false
-                                               },
-                                               {
-                                                   "from":  "Jan 2021",
-                                                   "to":  "Dec 2022",
-                                                   "role":  "Past Experience B",
-                                                   "scope":  "Handled reporting, support tasks, and system administration work while strengthening practical experience with operational systems.",
-                                                   "skills":  [
-                                                                  "Data Analysis",
-                                                                  "Reporting",
-                                                                  "System Administration"
-                                                              ],
-                                                   "current":  false
-                                               },
-                                               {
-                                                   "from":  "Jan 2015",
-                                                   "to":  "Dec 2019",
-                                                   "role":  "Earlier Career C",
-                                                   "scope":  "Roles spanning immigration consulting, HR operations, payroll administration, and records management that built the operational foundation behind later systems work.",
-                                                   "skills":  [
+    "keyAchievements":  [
+                            {
+                                "title":  "Replacing a Vendor Sales App In-House",
+                                "summary":  "Part of a 3-developer team that replaced a vendor-built Android agent sales app with an in-house Laravel web system in under a month, avoiding about RM 120,000 a year in vendor fees. Built the data sync between the new system and the legacy database."
+                            },
+                            {
+                                "title":  "Automating Retailer Purchase Orders",
+                                "summary":  "Built the processing pipeline that turns purchase-order files from multiple retailers, each in a different format, into clean structured data for the order system: upload validation, format normalization, and SQL stored procedures, reducing manual work and errors."
+                            },
+                            {
+                                "title":  "Building a Multi-Agency Questionnaire System",
+                                "summary":  "Built a questionnaire platform where admins create forms with text, checkbox, image, and signature fields, then assign them across agencies, with a searchable reporting dashboard and exports for audits."
+                            }
+                        ],
+    "roles":  [
+                  {
+                      "from":  "May 2026",
+                      "to":  "Present",
+                      "role":  "Executive, Web Engineer",
+                      "scope":  "Developer on a live customer-support platform covering chat, ticketing, and automation: resolving production issues raised by support agents, building enhancements, and investigating performance and data problems.",
+                      "skills":  [
+                                     "PHP",
+                                     "Laravel",
+                                     "SQL Server",
+                                     "AJAX",
+                                     "Bootstrap"
+                                 ],
+                      "current":  true
+                  },
+                  {
+                      "from":  "Dec 2024",
+                      "to":  "Apr 2026",
+                      "role":  "Application Analyst \u0026 Developer",
+                      "scope":  "In-house developer and analyst supporting B2B operations: building and maintaining systems for retailer purchase orders, returns reconciliation, e-invoice validation, and reporting, from requirements and UAT to production fixes.",
+                      "skills":  [
+                                     "Web Development",
+                                     "Database Management",
+                                     "Process Automation"
+                                 ],
+                      "current":  false
+                  },
+                  {
+                      "from":  "May 2024",
+                      "to":  "Present",
+                      "role":  "Independent Developer",
+                      "scope":  "Sole technical lead building a management platform for the construction industry in PHP: project and task tracking, quotations and purchase orders, and worker and subcontractor management, with the Linux server infrastructure set up ahead of launch.",
+                      "skills":  [
+                                     "Data Analysis",
+                                     "Reporting",
+                                     "System Administration"
+                                 ],
+                      "current":  false
+                  },
+                  {
+                      "from":  "June 2023",
+                      "to":  "June 2024",
+                      "role":  "Database Support Officer",
+                      "scope":  "Administering a Salesforce CRM for a non-profit: data imports and exports, integration monitoring, monthly reports for finance and fundraising, and first-level support for internal users and vendors.",
+                      "skills":  [
 
-                                                              ],
-                                                   "current":  false,
-                                                   "positions":  [
-                                                                     {
-                                                                         "role":  "HR Operations Executive",
-                                                                         "from":  "Jul 2019",
-                                                                         "to":  "Dec 2019"
-                                                                     },
-                                                                     {
-                                                                         "role":  "Administrative Assistant (Grade N19)",
-                                                                         "from":  "May 2018",
-                                                                         "to":  "June 2019"
-                                                                     },
-                                                                     {
-                                                                         "role":  "ESD Consultant",
-                                                                         "from":  "Nov 2017",
-                                                                         "to":  "Apr 2018"
-                                                                     },
-                                                                     {
-                                                                         "role":  "Visa \u0026 Immigration Consultant",
-                                                                         "from":  "Feb 2016",
-                                                                         "to":  "Oct 2017"
-                                                                     },
-                                                                     {
-                                                                         "role":  "Operation Assistant",
-                                                                         "from":  "Jan 2015",
-                                                                         "to":  "Jan 2016"
-                                                                     }
-                                                                 ]
-                                               }
-                                           ]
-                             }
+                                 ],
+                      "current":  false
+                  },
+                  {
+                      "from":  "Jan 2015",
+                      "to":  "May 2023",
+                      "role":  "Earlier Career",
+                      "scope":  "Roles spanning immigration consulting, HR operations, payroll administration, and records management, and informally the go-to IT guy, which built the operational foundation behind later systems work.",
+                      "skills":  [
+
+                                 ],
+                      "current":  false,
+                      "positions":  [
+                                        {
+                                            "role":  "Operations Executive",
+                                            "from":  "Jan 2020",
+                                            "to":  "May 2023",
+                                            "description":  "Business-side contact for the app developers on a mobile hotel room booking system: requirements, user testing, issue reporting."
+                                        },
+                                        {
+                                            "role":  "HR Operations Executive",
+                                            "from":  "July 2019",
+                                            "to":  "Dec 2019"
+                                        },
+                                        {
+                                            "role":  "Administrative Assistant (Grade N19)",
+                                            "from":  "May 2018",
+                                            "to":  "June 2019",
+                                            "description":  "User-tested a new online system replacing physical mailing files; reported issues and supported the IT team."
+                                        },
+                                        {
+                                            "role":  "ESD Consultant",
+                                            "from":  "Nov 2017",
+                                            "to":  "Apr 2018"
+                                        },
+                                        {
+                                            "role":  "Visa \u0026 Immigration Consultant",
+                                            "from":  "Feb 2016",
+                                            "to":  "Oct 2017"
+                                        },
+                                        {
+                                            "role":  "Operation Assistant",
+                                            "from":  "Jan 2015",
+                                            "to":  "Jan 2016"
+                                        }
+                                    ]
+                  }
+              ]
+}
 }

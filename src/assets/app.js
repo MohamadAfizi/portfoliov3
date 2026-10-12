@@ -76,8 +76,12 @@ document.addEventListener('DOMContentLoaded', function() {
     let categoriesData = {};
 
     function setActiveNavLink(linkElement) {
-        navLinks.forEach(link => link.classList.remove('active'));
+        navLinks.forEach(link => {
+          link.classList.remove('active');
+          link.removeAttribute('aria-current');
+        });
         linkElement.classList.add('active');
+        linkElement.setAttribute('aria-current', 'page');
     }
 
     const itemsPerPage = 6;
@@ -247,8 +251,14 @@ document.addEventListener('DOMContentLoaded', function() {
         achievementSection.setAttribute('aria-labelledby', 'industryAchievementsTitle');
 
         const achievementCommand = document.createElement('p');
-        achievementCommand.className = 'industry-command';
-        achievementCommand.textContent = '$ career-impact --selected';
+        achievementCommand.className = 'terminal-command industry-command';
+        const achievementPrompt = document.createElement('span');
+        achievementPrompt.className = 'terminal-prompt';
+        achievementPrompt.textContent = 'afizi@portfolio:~$';
+        achievementCommand.appendChild(achievementPrompt);
+        const achievementCommandText = document.createElement('span');
+        achievementCommandText.textContent = 'cat career-highlights.txt';
+        achievementCommand.appendChild(achievementCommandText);
         achievementSection.appendChild(achievementCommand);
 
         const achievementHeading = document.createElement('h3');
@@ -332,6 +342,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             item.appendChild(line);
+            if (position.description) {
+              const description = document.createElement('p');
+              description.className = 'timeline-scope';
+              description.textContent = position.description;
+              item.appendChild(description);
+            }
             positionList.appendChild(item);
           });
 
@@ -350,27 +366,21 @@ document.addEventListener('DOMContentLoaded', function() {
           role.appendChild(scope);
         }
 
-        const skills = Array.isArray(experience.skills) ? experience.skills.filter(Boolean) : [];
-        if (skills.length > 0) {
-          const skillList = document.createElement('div');
-          skillList.className = 'timeline-skills';
-          skills.forEach((skill, skillIndex) => {
-            skillList.appendChild(createSkillTag(skill, skillIndex));
-          });
-          role.appendChild(skillList);
-        }
-
         roles.appendChild(role);
       });
 
       industryTimeline.appendChild(roles);
     }
 
+    let categoryDescriptionTimeout = null;
     function updateCategoryPresentation(category) {
       const descElement = document.getElementById('categoryDescription');
       if (descElement) {
+        if (categoryDescriptionTimeout !== null) {
+          clearTimeout(categoryDescriptionTimeout);
+        }
         descElement.classList.remove('active');
-        setTimeout(() => {
+        categoryDescriptionTimeout = setTimeout(() => {
           descElement.textContent = categoryDescriptions[category] || '';
           descElement.classList.add('active');
         }, 150);
@@ -394,10 +404,23 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
+      const cardsWereHidden = Boolean(cardsWrapper && cardsWrapper.hidden);
       if (cardsWrapper) cardsWrapper.hidden = false;
       if (industryTimeline) {
         industryTimeline.hidden = true;
         industryTimeline.classList.remove('animate');
+      }
+
+      if (cardsWereHidden) {
+        updateCardContent(category);
+        cardsWrapper.hidden = false;
+        cards.forEach(card => card.classList.remove('animate', 'exit'));
+        requestAnimationFrame(() => {
+          cards.forEach((card, index) => {
+            setTimeout(() => card.classList.add('animate'), index * 100);
+          });
+        });
+        return;
       }
 
       cards.forEach((card, index) => {
@@ -412,17 +435,45 @@ document.addEventListener('DOMContentLoaded', function() {
       }, 600);
     }
 
+    function activateCategory(category) {
+      const link = Array.from(navLinks).find(navLink => navLink.dataset.category === category);
+      if (!link) return;
+      setActiveNavLink(link);
+      activeGroupPerCategory[category] = null;
+      pagesState[category] = 0;
+      updateCategoryPresentation(category);
+      animateCards(category);
+    }
+
     navLinks.forEach(link => {
       link.addEventListener('click', (e) => {
         e.preventDefault();
-        setActiveNavLink(e.currentTarget);
         const category = e.currentTarget.dataset.category;
-        activeGroupPerCategory[category] = null;
-        pagesState[category] = 0;
-        updateCategoryPresentation(category);
-        animateCards(category);
+        const nextUrl = new URL(window.location.href);
+        nextUrl.hash = category === 'industry_experiences' ? '' : category;
+        if (nextUrl.href !== window.location.href) {
+          window.history.replaceState(null, '', `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+        }
+        lastHandledHash = nextUrl.hash;
+        activateCategory(category);
       });
     });
+
+    let lastHandledHash = null;
+    function activateCategoryFromHash() {
+      const hash = window.location.hash;
+      if (hash === lastHandledHash && hash !== '#industry_experiences') return;
+      lastHandledHash = hash;
+      const category = hash.slice(1);
+      activateCategory(categoryConfig[category] ? category : 'industry_experiences');
+      if (hash === '#industry_experiences') {
+        window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`);
+        lastHandledHash = '';
+      }
+    }
+
+    window.addEventListener('popstate', activateCategoryFromHash);
+    window.addEventListener('hashchange', activateCategoryFromHash);
 
     const prevBtn = document.getElementById('cardsPrev');
     const nextBtn = document.getElementById('cardsNext');
@@ -439,11 +490,8 @@ document.addEventListener('DOMContentLoaded', function() {
       if (pagesState[category] < getTotalPages(category) - 1) { pagesState[category] += 1; animateCards(category); }
     });
 
-    ensureCategoryState('projects');
-    updateCategoryPresentation('projects');
-    animateCards('projects');
-    const initialLink = document.querySelector('.nav-links a[data-category="projects"]') || navLinks[0];
-    if (initialLink) setActiveNavLink(initialLink);
+    Object.keys(categoryConfig).forEach(ensureCategoryState);
+    activateCategoryFromHash();
     }
 
     // Start loading and initialization
@@ -654,7 +702,7 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
   const analyticsSliderTitle = document.getElementById('analyticsSliderTitle');
   const chartCanvas = document.getElementById('visitorAnalyticsChart');
-  if (!analyticsSliderTitle || !chartCanvas) return;
+  if (!chartCanvas) return;
 
   const analyticsData = portfolioData.analytics || {};
   const visitorData = analyticsData.visitors || { labels: [], values: [] };
@@ -748,17 +796,17 @@ document.addEventListener('DOMContentLoaded', function() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      layout: { padding: { top: 18, bottom: 6 } },
+      layout: { padding: { top: 18, bottom: 6, left: 12, right: 12 } },
       scales: {
         y: {
           beginAtZero: true,
-          grid: { color: 'rgba(255, 255, 255, 0.05)' },
-          ticks: { color: '#888', precision: 0, stepSize: 1, grace: '25%' }
+          grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+          ticks: { color: 'transparent', precision: 0, stepSize: 1, grace: '25%', maxTicksLimit: 3, font: { size: 10 } }
         },
-        x: { grid: { display: false }, ticks: { color: '#888' } }
+        x: { grid: { display: false }, ticks: { color: '#888', font: { size: 10 } } }
       },
       plugins: {
-        dataLabelPlugin: { enabled: true, position: 'top', color: '#ffffff', font: "12px 'JetBrains Mono', monospace" },
+        dataLabelPlugin: { enabled: true, position: 'top', color: '#ffffff', font: "10px 'JetBrains Mono', monospace" },
         legend: { display: false },
         tooltip: {
           backgroundColor: 'rgba(0,0,0,0.8)',
@@ -786,11 +834,25 @@ document.addEventListener('DOMContentLoaded', function() {
     analyticsSliderTitle.textContent = text;
   }
 
-  ensureVisitorAnalytics();
-  chartCanvas.classList.add('is-active');
-  chartCanvas.removeAttribute('hidden');
+  function initChartOnScroll() {
+    if (analyticsChart) return;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          ensureVisitorAnalytics();
+          chartCanvas.classList.add('is-active');
+          chartCanvas.removeAttribute('hidden');
+          updateAnalyticsTitle(uiText.visitor_analytics_title || '', false);
+          if (analyticsChart) analyticsChart.resize();
+          observer.disconnect();
+        }
+      });
+    }, { rootMargin: '100px' });
+    observer.observe(chartCanvas);
+  }
+
+  initChartOnScroll();
   updateAnalyticsTitle(uiText.visitor_analytics_title || '', false);
-  if (analyticsChart) analyticsChart.resize();
 
   // Future second analytics chart:
   // Add the next small, dynamic chart here once we have a better data source

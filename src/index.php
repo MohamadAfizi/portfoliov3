@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/lib/bootstrap.php';
 
+$show_analytics = false;
 $content = load_content();
 $visitorAnalytics = visitor_analytics();
 $portfolioCategories = [];
@@ -12,13 +13,13 @@ $site = $content['site'];
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><?= e($site['title'] ?? 'Portfolio') ?></title>
+<title><?= e($site['title'] ?? 'Mohamad Afizi | Full Stack Web Developer') ?></title>
 <?php if (!empty($site['description'])): ?>
 <meta name="description" content="<?= e($site['description']) ?>">
 <?php endif; ?>
-<?php if (!empty($site['favicon'])): ?>
-<link rel="icon" type="image/png" href="<?= e($site['favicon']) ?>">
-<?php endif; ?>
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico?v=2" sizes="any">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -26,7 +27,9 @@ $site = $content['site'];
 <link rel="stylesheet" href="assets/styles.css?v=<?= filemtime(__DIR__ . '/assets/styles.css') ?>">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/vanta@latest/dist/vanta.waves.min.js"></script>
+<?php if ($show_analytics): ?>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<?php endif; ?>
 <script src="https://cdn.jsdelivr.net/npm/baffle@0.3.6/dist/baffle.min.js"></script>
 </head>
 <body>
@@ -36,11 +39,13 @@ $site = $content['site'];
     <div class="intro">
 <?php
 include __DIR__ . '/sections/hero.php';
-include __DIR__ . '/sections/analytics.php';
+include __DIR__ . '/sections/industry-experiences.php';
 include __DIR__ . '/sections/projects.php';
 include __DIR__ . '/sections/milestones.php';
-include __DIR__ . '/sections/industry-experiences.php';
 include __DIR__ . '/sections/portfolio.php';
+if ($show_analytics) {
+    include __DIR__ . '/sections/analytics.php';
+}
 ?>
 
 <div id="readmeModal" class="modal" aria-hidden="true">

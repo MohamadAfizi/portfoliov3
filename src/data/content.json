@@ -19,11 +19,11 @@
     "navigation":  {
                        "projects":  {
                                         "label":  "./projects",
-                                        "description":  "A range of projects across independent builds, technical experiments, and guided learning — showcasing how I think, solve, and execute."
+                                        "description":  "Independent builds, technical experiments, and coursework: what I've built and learned along the way."
                                     },
                        "milestones":  {
                                           "label":  "./milestones",
-                                          "description":  "Certifications, courses, and structured learning milestones that reflect my commitment to continuous improvement"
+                                          "description":  "Certifications and courses that built my skills."
                                       },
                        "industry_experiences":  {
                                                     "label":  "./industry-experiences",

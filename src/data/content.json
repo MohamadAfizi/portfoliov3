@@ -889,16 +889,16 @@
     "industry_experiences":  {
     "keyAchievements":  [
                             {
-                                "title":  "Production System Delivery",
-                                "summary":  "Delivered internal web systems that improved operational visibility, reduced manual processing, and supported daily business workflows."
+                                "title":  "Replacing a Vendor Sales App In-House",
+                                "summary":  "Part of a 3-developer team that replaced a vendor-built Android agent sales app with an in-house Laravel web system in under a month, avoiding about RM 120,000 a year in vendor fees. Built the data sync between the new system and the legacy database."
                             },
                             {
-                                "title":  "Automation and Reporting",
-                                "summary":  "Built reporting and automation features that turned repeated manual checks into faster, more reliable workflows."
+                                "title":  "Automating Retailer Purchase Orders",
+                                "summary":  "Built the processing pipeline that turns purchase-order files from multiple retailers, each in a different format, into clean structured data for the order system: upload validation, format normalization, and SQL stored procedures, reducing manual work and errors."
                             },
                             {
-                                "title":  "Infrastructure Ownership",
-                                "summary":  "Managed self-hosted systems and application infrastructure end to end, from server setup to deployment and maintenance."
+                                "title":  "Building a Multi-Agency Questionnaire System",
+                                "summary":  "Built a questionnaire platform where admins create forms with text, checkbox, image, and signature fields, then assign them across agencies, with a searchable reporting dashboard and exports for audits."
                             }
                         ],
     "roles":  [
@@ -906,7 +906,7 @@
                       "from":  "May 2026",
                       "to":  "Present",
                       "role":  "Executive, Web Engineer",
-                      "scope":  "[Placeholder] One line on what you build and own in this role.",
+                      "scope":  "Developer on a live customer-support platform covering chat, ticketing, and automation: resolving production issues raised by support agents, building enhancements, and investigating performance and data problems.",
                       "skills":  [
                                      "PHP",
                                      "Laravel",
@@ -920,7 +920,7 @@
                       "from":  "Dec 2024",
                       "to":  "Apr 2026",
                       "role":  "Application Analyst \u0026 Developer",
-                      "scope":  "Building and maintaining internal business applications, reporting tools, and workflow automation across active production systems.",
+                      "scope":  "In-house developer and analyst supporting B2B operations: building and maintaining systems for retailer purchase orders, returns reconciliation, e-invoice validation, and reporting, from requirements and UAT to production fixes.",
                       "skills":  [
                                      "Web Development",
                                      "Database Management",
@@ -932,7 +932,7 @@
                       "from":  "May 2024",
                       "to":  "Present",
                       "role":  "Independent Developer",
-                      "scope":  "[Placeholder] One line on freelance and personal builds.",
+                      "scope":  "Sole technical lead building a management platform for the construction industry in PHP: project and task tracking, quotations and purchase orders, and worker and subcontractor management, with the Linux server infrastructure set up ahead of launch.",
                       "skills":  [
                                      "Data Analysis",
                                      "Reporting",
@@ -944,7 +944,7 @@
                       "from":  "June 2023",
                       "to":  "June 2024",
                       "role":  "Database Support Officer",
-                      "scope":  "[Placeholder] One line on what you supported and fixed.",
+                      "scope":  "Administering a Salesforce CRM for a non-profit: data imports and exports, integration monitoring, monthly reports for finance and fundraising, and first-level support for internal users and vendors.",
                       "skills":  [
 
                                  ],
@@ -954,7 +954,7 @@
                       "from":  "Jan 2015",
                       "to":  "May 2023",
                       "role":  "Earlier Career",
-                      "scope":  "Roles spanning immigration consulting, HR operations, payroll administration, and records management, and informally the go-to IT guy, that built the operational foundation behind later systems work.",
+                      "scope":  "Roles spanning immigration consulting, HR operations, payroll administration, and records management, and informally the go-to IT guy, which built the operational foundation behind later systems work.",
                       "skills":  [
 
                                  ],
@@ -964,7 +964,7 @@
                                             "role":  "Operations Executive",
                                             "from":  "Jan 2020",
                                             "to":  "May 2023",
-                                            "description":  "Business-side contact for the app developers on a mobile booking system: requirements, user testing, issue reporting."
+                                            "description":  "Business-side contact for the app developers on a mobile hotel room booking system: requirements, user testing, issue reporting."
                                         },
                                         {
                                             "role":  "HR Operations Executive",

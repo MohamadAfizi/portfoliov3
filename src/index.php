@@ -6,13 +6,7 @@ require_once __DIR__ . '/lib/bootstrap.php';
 $show_analytics = false;
 $content = load_content();
 $visitorAnalytics = visitor_analytics();
-$currentMonthIndex = array_key_last($visitorAnalytics['values'] ?? []);
-$currentMonthVisitors = $currentMonthIndex !== null
-    ? ($visitorAnalytics['values'][$currentMonthIndex] ?? null)
-    : null;
-$currentMonthLabel = $currentMonthIndex !== null
-    ? ($visitorAnalytics['labels'][$currentMonthIndex] ?? null)
-    : null;
+$totalVisitors = count(read_json_file(visitor_data_path()));
 $portfolioCategories = [];
 $site = $content['site'];
 ?><!DOCTYPE html>
@@ -66,14 +60,12 @@ if ($show_analytics) {
   </div>
 </div>
 
-<?php if (is_numeric($currentMonthVisitors) && is_string($currentMonthLabel)): ?>
-<aside id="monthlyVisitorPopup" class="monthly-visitor-popup" aria-label="Monthly visitor count" aria-hidden="true" hidden>
-  <span class="monthly-visitor-live" aria-hidden="true"></span>
-  <span class="monthly-visitor-label"><?= e($currentMonthLabel) ?> visitors</span>
-  <strong class="monthly-visitor-count"><?= e($currentMonthVisitors) ?></strong>
-  <button class="monthly-visitor-close" type="button" aria-label="Dismiss monthly visitor count">&times;</button>
+<aside id="totalVisitorPopup" class="total-visitor-popup" aria-label="Total visitor count" aria-hidden="true" hidden>
+  <span class="total-visitor-live" aria-hidden="true"></span>
+  <span class="total-visitor-label">total visitor :</span>
+  <strong class="total-visitor-count"><?= e($totalVisitors) ?></strong>
+  <button class="total-visitor-close" type="button" aria-label="Dismiss total visitor count">&times;</button>
 </aside>
-<?php endif; ?>
 
 <script src="assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
 <div class="site-footer">

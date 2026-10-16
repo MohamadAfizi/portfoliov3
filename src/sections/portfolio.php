@@ -16,15 +16,7 @@ $pageData = [
 ?>
 <nav class="nav-links" aria-label="Portfolio categories">
 <?php foreach ($portfolioCategories as $key => $category): ?>
-<?php
-$hasAsciiRipple = in_array($key, ['industry_experiences', 'projects', 'milestones'], true);
-$activeAttributes = $key === 'industry_experiences' ? ' class="active" aria-current="page"' : '';
-?>
-<?php if ($hasAsciiRipple): ?>
-  <a href="#<?= e($key) ?>" data-category="<?= e($key) ?>"<?= $activeAttributes ?> aria-label="<?= e($category['label']) ?>" data-ascii-ripple="true"><span class="ascii-ripple-label" aria-hidden="true"><?= e($category['label']) ?></span></a>
-<?php else: ?>
-  <a href="#<?= e($key) ?>" data-category="<?= e($key) ?>"<?= $activeAttributes ?>><?= e($category['label']) ?></a>
-<?php endif; ?>
+  <a href="#<?= e($key) ?>" data-category="<?= e($key) ?>"<?= $key === 'industry_experiences' ? ' class="active" aria-current="page"' : '' ?>><?= e($category['label']) ?></a>
 <?php endforeach; ?>
 </nav>
 

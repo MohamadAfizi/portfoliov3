@@ -96,7 +96,7 @@ section.nav {
   transform: translateY(-3px);
 }
 
-.monthly-visitor-popup {
+.total-visitor-popup {
   position: fixed;
   right: max(16px, env(safe-area-inset-right));
   bottom: max(16px, env(safe-area-inset-bottom));
@@ -116,16 +116,16 @@ section.nav {
   transition: opacity 5s linear, visibility 0s linear 5s;
 }
 
-.monthly-visitor-popup[hidden] {
+.total-visitor-popup[hidden] {
   display: none;
 }
 
-.monthly-visitor-popup.is-dismissing {
+.total-visitor-popup.is-dismissing {
   visibility: hidden;
   opacity: 0;
 }
 
-.monthly-visitor-live {
+.total-visitor-live {
   width: 7px;
   height: 7px;
   border-radius: 50%;
@@ -133,20 +133,20 @@ section.nav {
   box-shadow: 0 0 9px var(--terminal-cyan);
 }
 
-.monthly-visitor-label {
+.total-visitor-label {
   color: #aaa;
   font-size: 0.7rem;
   white-space: nowrap;
 }
 
-.monthly-visitor-count {
+.total-visitor-count {
   color: var(--terminal-cyan);
   font-size: 0.95rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 }
 
-.monthly-visitor-close {
+.total-visitor-close {
   appearance: none;
   border: 0;
   padding: 0 2px;
@@ -158,7 +158,7 @@ section.nav {
   cursor: pointer;
 }
 
-.monthly-visitor-close:hover {
+.total-visitor-close:hover {
   color: var(--terminal-cyan);
 }
 
@@ -1392,7 +1392,7 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .monthly-visitor-popup {
+  .total-visitor-popup {
     transition: none;
   }
 

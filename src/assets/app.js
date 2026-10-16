@@ -32,6 +32,91 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
+document.addEventListener('DOMContentLoaded', function() {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const popup = document.getElementById('monthlyVisitorPopup');
+  if (popup) {
+    const closeButton = popup.querySelector('.monthly-visitor-close');
+    const timers = [];
+    timers.push(window.setTimeout(() => {
+      popup.hidden = false;
+      popup.setAttribute('aria-hidden', 'false');
+      timers.push(window.setTimeout(() => {
+        popup.classList.add('is-dismissing');
+        const hidePopup = () => {
+          popup.hidden = true;
+          popup.setAttribute('aria-hidden', 'true');
+        };
+        if (reduceMotion) {
+          hidePopup();
+        } else {
+          timers.push(window.setTimeout(hidePopup, 5000));
+        }
+      }, 5000));
+    }, 5000));
+
+    closeButton.addEventListener('click', () => {
+      timers.forEach(timer => window.clearTimeout(timer));
+      popup.hidden = true;
+      popup.setAttribute('aria-hidden', 'true');
+    });
+  }
+
+  const supportsHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+  if (reduceMotion) return;
+
+  const asciiCharacters = '!<>-_\\/[]{}—=+*^?#';
+  document.querySelectorAll('.nav-links [data-ascii-ripple="true"]').forEach(link => {
+    const label = link.querySelector('.ascii-ripple-label');
+    if (!label) return;
+
+    const originalText = label.textContent || '';
+    let animationFrame = 0;
+    let animationStart = 0;
+
+    function restoreText() {
+      if (animationFrame) {
+        window.cancelAnimationFrame(animationFrame);
+        animationFrame = 0;
+      }
+      label.textContent = originalText;
+    }
+
+    function animateRipple(timestamp) {
+      if (!animationStart) animationStart = timestamp;
+      const progress = Math.min((timestamp - animationStart) / 700, 1);
+      const characters = Array.from(originalText);
+      const center = (characters.length - 1) / 2;
+      const furthest = Math.max(center, characters.length - 1 - center, 1);
+      const settledDistance = progress * furthest;
+
+      label.textContent = characters.map((character, index) => {
+        if (Math.abs(index - center) <= settledDistance) return character;
+        return asciiCharacters[Math.floor(Math.random() * asciiCharacters.length)];
+      }).join('');
+
+      if (progress < 1) {
+        animationFrame = window.requestAnimationFrame(animateRipple);
+      } else {
+        restoreText();
+      }
+    }
+
+    function startRipple() {
+      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+      animationStart = 0;
+      animationFrame = window.requestAnimationFrame(animateRipple);
+    }
+
+    if (supportsHover) {
+      link.addEventListener('pointerenter', startRipple);
+      link.addEventListener('pointerleave', restoreText);
+    }
+    link.addEventListener('focus', startRipple);
+    link.addEventListener('blur', restoreText);
+  });
+});
+
 // ============================================
 // VANTA.js Background Setup
 // ============================================
